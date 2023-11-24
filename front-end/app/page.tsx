@@ -4,43 +4,32 @@ import Navbar from "./components/navbar";
 import JoinGroupModal from "./components/join_group/JoinGroupModal";
 import Table from "./components/table";
 import CreateGroupModal from "./components/create_group/CreateGroupModal";
+import { groupsMock } from "./mock";
 
-interface Group {
-  GroupName: string;
-  Code: string;
-  users: User[];
-  movies: [];
-}
-
-interface User {
-  name: string;
-  img: string;
-  password?: string;
-}
 
 function Home() {
   // Table Columns
-  const columns = ['GroupName', 'Code'];
+  const columns = ['groupName', 'code'];
   //Mock Data
-  const groups: Group[] = [
-    {
-      GroupName: "Group1",
-      Code: "123",
-      users: [
-        {
-          name: "person1",
-          img: "",
-        }
-      ],
-      movies: [],
-    },
-    {
-      GroupName: "Group2",
-      Code: "456",
-      users: [],
-      movies: [],
-    },
-  ];
+  // const groups: Group[] = [
+  //   {
+  //     GroupName: "Group1",
+  //     Code: "123",
+  //     users: [
+  //       {
+  //         name: "person1",
+  //         img: "",
+  //       }
+  //     ],
+  //     movies: [],
+  //   },
+  //   {
+  //     GroupName: "Group2",
+  //     Code: "456",
+  //     users: [],
+  //     movies: [],
+  //   },
+  // ];
 
   //Mock Button Click
   const handleButtonClick = () => {
@@ -66,7 +55,7 @@ function Home() {
         <CreateGroupModal />
       </div>
 
-      <Table columns={columns} data={groups} />
+      <Table columns={columns} data={groupsMock} />
     </main>
   );
 };
