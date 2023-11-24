@@ -15,6 +15,7 @@ interface Group {
 interface User {
   name: string;
   img: string;
+  password?: string;
 }
 
 function Home() {
