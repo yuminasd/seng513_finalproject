@@ -36,6 +36,14 @@ func CreateUser() gin.HandlerFunc { //Should probably check if it exists already
 			return
 		}
 
+		//if userCollection.Find()
+		print(user.EmailAddress)
+		err := userCollection.FindOne(ctx, bson.M{"emailaddress": string(user.EmailAddress)}).Decode(&user)
+		if err == nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "Already Exists"})
+			return
+		}
+
 		newUser := models.User{
 			Id:           primitive.NewObjectID(),
 			Name:         user.Name,
