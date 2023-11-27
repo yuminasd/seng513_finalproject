@@ -56,7 +56,7 @@ func CreateMovie() gin.HandlerFunc {
 func GetMovie() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		movieName := c.Param("movieID")
+		movieName := c.Param("movieId")
 		var movie models.Movie
 		defer cancel()
 
@@ -105,7 +105,7 @@ func GetAllMovies() gin.HandlerFunc {
 func DeleteMovie() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		movieID := c.Param("movieID")
+		movieID := c.Param("movieId")
 		defer cancel()
 
 		objId, _ := primitive.ObjectIDFromHex(movieID)
@@ -129,13 +129,21 @@ func DeleteMovie() gin.HandlerFunc {
 	}
 }
 
+type MovieRequestBody struct {
+	Genre []string
+}
+
 func GetMoviesByGenre() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		movieGenres := c.Param("movieGenre")
+		var requestBody MovieRequestBody
 		var movies []models.Movie
 		defer cancel()
 
+		if errbody := c.BindJSON(&requestBody); errbody != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": errbody.Error()}})
+			return
+		}
 		results, err := movieCollection.Find(ctx, bson.M{})
 
 		if err != nil {
@@ -149,8 +157,8 @@ func GetMoviesByGenre() gin.HandlerFunc {
 			if err = results.Decode(&singleMovie); err != nil {
 				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			}
-			for i := 0; i < len(movieGenres); i++ {
-				if slices.Contains(singleMovie.Genres, string(movieGenres[i])) {
+			for i := 0; i < len(requestBody.Genre); i++ {
+				if slices.Contains(singleMovie.Genres, string(requestBody.Genre[i])) {
 					movies = append(movies, singleMovie)
 					break
 				}

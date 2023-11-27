@@ -44,7 +44,6 @@ func CreateUser() gin.HandlerFunc {
 			return
 		}
 
-		print(user.EmailAddress)
 		err := userCollection.FindOne(ctx, bson.M{"emailaddress": string(user.EmailAddress)}).Decode(&user)
 		if err == nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": "User already exists!"}})
