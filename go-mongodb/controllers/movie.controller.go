@@ -6,6 +6,7 @@ import (
 	"go-mongodb/models"
 	"go-mongodb/responses"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -52,23 +53,22 @@ func CreateMovie() gin.HandlerFunc {
 	}
 }
 
-// Come back to this later will decide if we just want to do movie name or movie id
 func GetMovie() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		movieName := c.Param("movieName")
-		var user models.User
+		movieName := c.Param("movieID")
+		var movie models.Movie
 		defer cancel()
 
 		objId, _ := primitive.ObjectIDFromHex(movieName)
 
-		err := movieCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		err := movieCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&movie)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": movie}})
 	}
 }
 
@@ -102,14 +102,13 @@ func GetAllMovies() gin.HandlerFunc {
 	}
 }
 
-// Come back to this later
 func DeleteMovie() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		userId := c.Param("userId")
+		movieID := c.Param("movieID")
 		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(userId)
+		objId, _ := primitive.ObjectIDFromHex(movieID)
 
 		result, err := movieCollection.DeleteOne(ctx, bson.M{"id": objId})
 		if err != nil {
@@ -119,13 +118,47 @@ func DeleteMovie() gin.HandlerFunc {
 
 		if result.DeletedCount < 1 {
 			c.JSON(http.StatusNotFound,
-				responses.UserResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "User with specified ID not found!"}},
+				responses.UserResponse{Status: http.StatusNotFound, Message: "error", Data: map[string]interface{}{"data": "Movie with specified ID not found!"}},
 			)
 			return
 		}
 
 		c.JSON(http.StatusOK,
-			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully deleted!"}},
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Movie successfully deleted!"}},
+		)
+	}
+}
+
+func GetMoviesByGenre() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		movieGenres := c.Param("movieGenre")
+		var movies []models.Movie
+		defer cancel()
+
+		results, err := movieCollection.Find(ctx, bson.M{})
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		defer results.Close(ctx)
+		for results.Next(ctx) {
+			var singleMovie models.Movie
+			if err = results.Decode(&singleMovie); err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			}
+			for i := 0; i < len(movieGenres); i++ {
+				if slices.Contains(singleMovie.Genres, string(movieGenres[i])) {
+					movies = append(movies, singleMovie)
+					break
+				}
+			}
+		}
+
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": movies}},
 		)
 	}
 }
