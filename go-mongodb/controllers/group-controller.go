@@ -7,3 +7,7 @@ import (
 )
 
 var groupCollection *mongo.Collection = configs.GetCollection(configs.DB, "groups")
+
+//func addUser()
+
+//func createGroup()

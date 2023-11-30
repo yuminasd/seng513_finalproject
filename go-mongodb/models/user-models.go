@@ -12,11 +12,3 @@ type User struct {
 	LikedMovies    []string           `json:"likedMovies,omitempty"`
 	DislikedMovies []string           `json:"dislikedMovies,omitempty"`
 }
-
-/*
-Cannot think of anything else we would need besides movieID so made it a string can change
-
-type LikeDislikeUser struct {
-	MovieID string
-}
-*/

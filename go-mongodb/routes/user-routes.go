@@ -14,6 +14,7 @@ func UserRoute(router *gin.Engine) {
 	router.GET("/movies", controllers.GetAllMovies())
 	router.GET("/movies/:movieId", controllers.GetMovie())
 	router.GET("/moviesbygenre", controllers.GetMoviesByGenre())
+	router.GET("/checklogin", controllers.CheckAuth())
 
 	router.POST("/users", controllers.CreateUser())
 	router.POST("/movies", controllers.CreateMovie())
