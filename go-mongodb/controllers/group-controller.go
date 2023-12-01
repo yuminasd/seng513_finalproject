@@ -17,7 +17,6 @@ import (
 
 var groupCollection *mongo.Collection = configs.GetCollection(configs.DB, "groups")
 var validateG = validator.New()
-var validate = validator.New()
 
 //Zainab
 //func CreateGroup()
@@ -34,7 +33,7 @@ func CreateGroup() gin.HandlerFunc { //Should probably check if it exists alread
 		}
 
 		//use the validator library to validate required fields
-		if validationErr := validate.Struct(&group); validationErr != nil {
+		if validationErr := validateG.Struct(&group); validationErr != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
 			return
 		}
