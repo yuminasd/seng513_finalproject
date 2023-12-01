@@ -6,9 +6,7 @@ import Button from '../components/button';
 export default function Page() {
     const router = useRouter();
 
-    // Your login logic here...
     const handleLogin = () => {
-        // Perform login actions...
         router.push('/');
     };
 
