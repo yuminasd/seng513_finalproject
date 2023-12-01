@@ -1,10 +1,19 @@
+
+
 export default function Swipe() {
+    
+    const groups = ['group 1', 'group 2', 'test'];
+    
+    
+   
+    
     return (
         <main>
-            <select className="selectgroupbox" >
-                <option value="" selected disabled hidden>Groups</option>
-                <option value="Group 1">Group 1</option>
-                <option value="Group 2">Group 2</option>   
+            <select name="selectgroupbox" >
+                <option value="" selected disabled hidden>Group Name</option>
+                {groups.map((e, key) => {
+                    return <option key={key} value={e}>{e}</option>;
+                })}
             </select>
         </main>
     )
