@@ -41,7 +41,6 @@ func CreateGroup() gin.HandlerFunc { //Should probably check if it exists alread
 		newGroup := models.Group{
 			Id:           primitive.NewObjectID(),
 			Name:         group.Name,
-			Code:		  group.Code,
 			Genre:        group.Genre,
 			Members:      group.Members,
 			LikedMovies:  group.LikedMovies,
