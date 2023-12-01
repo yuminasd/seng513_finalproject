@@ -17,10 +17,11 @@ import (
 
 var groupCollection *mongo.Collection = configs.GetCollection(configs.DB, "groups")
 var validateG = validator.New()
+var validate = validator.New()
 
-// Zainab
-// func CreateGroup()
-func CreateGroup() gin.HandlerFunc {
+//Zainab
+//func CreateGroup()
+func CreateGroup() gin.HandlerFunc { //Should probably check if it exists already
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		var group models.Group
@@ -33,16 +34,18 @@ func CreateGroup() gin.HandlerFunc {
 		}
 
 		//use the validator library to validate required fields
-		if validationErr := validateG.Struct(&group); validationErr != nil {
+		if validationErr := validate.Struct(&group); validationErr != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
 			return
 		}
 
 		newGroup := models.Group{
-			Id:      primitive.NewObjectID(),
-			Name:    group.Name,
-			Genre:   group.Genre,
-			Members: group.Members,
+			Id:           primitive.NewObjectID(),
+			Name:         group.Name,
+			Code:		  group.Code,
+			Genre:        group.Genre,
+			Members:      group.Members,
+			LikedMovies:  group.LikedMovies,
 		}
 
 		result, err := groupCollection.InsertOne(ctx, newGroup)
@@ -55,7 +58,7 @@ func CreateGroup() gin.HandlerFunc {
 	}
 }
 
-// func GetGroupInfo(id) / get all name, users, genre
+//func GetGroupInfo(id) / get all name, users, genre
 func GetGroupInfo() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -77,7 +80,7 @@ func GetGroupInfo() gin.HandlerFunc {
 
 //func UpdateGroup(id) / group name, genre, code
 
-// func DeleteAGroup(id)
+//func DeleteGroup(id)
 func DeleteAGroup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -111,5 +114,8 @@ func DeleteAGroup() gin.HandlerFunc {
 //func RemoveLikedMovies(Movie.Id)
 
 //func RemoveUser(User.id)
+
+//GetAllGroups for User Controller?
+
 
 //GetAllGroups for User Controller?
