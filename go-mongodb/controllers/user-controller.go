@@ -16,6 +16,7 @@ import (
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
+
 var validate = validator.New()
 
 func CreateUser() gin.HandlerFunc { //Should probably check if it exists already

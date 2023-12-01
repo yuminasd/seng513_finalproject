@@ -1,17 +1,26 @@
 package controllers
 
 import (
+	"context"
 	"go-mongodb/configs"
+	"go-mongodb/models"
+	"go-mongodb/responses"
+	"net/http"
+	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var groupCollection *mongo.Collection = configs.GetCollection(configs.DB, "groups")
-var validate = validator.New()
+var validateG = validator.New()
 
-//Zainab
-//func CreateGroup()
-func CreateGroup() gin.HandlerFunc { //Should probably check if it exists already
+// Zainab
+// func CreateGroup()
+func CreateGroup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		var group models.Group
@@ -24,18 +33,16 @@ func CreateGroup() gin.HandlerFunc { //Should probably check if it exists alread
 		}
 
 		//use the validator library to validate required fields
-		if validationErr := validate.Struct(&group); validationErr != nil {
+		if validationErr := validateG.Struct(&group); validationErr != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
 			return
 		}
 
 		newGroup := models.Group{
-			Id:           primitive.NewObjectID(),
-			Name:         group.Name,
-			Code:		  group.Code,
-			Genre:        group.Genre,
-			Members:      group.Members,
-			LikedMovies:  group.LikedMovies,
+			Id:      primitive.NewObjectID(),
+			Name:    group.Name,
+			Genre:   group.Genre,
+			Members: group.Members,
 		}
 
 		result, err := groupCollection.InsertOne(ctx, newGroup)
@@ -48,7 +55,7 @@ func CreateGroup() gin.HandlerFunc { //Should probably check if it exists alread
 	}
 }
 
-//func GetGroupInfo(id) / get all name, users, genre
+// func GetGroupInfo(id) / get all name, users, genre
 func GetGroupInfo() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -70,7 +77,7 @@ func GetGroupInfo() gin.HandlerFunc {
 
 //func UpdateGroup(id) / group name, genre, code
 
-//func DeleteGroup(id)
+// func DeleteAGroup(id)
 func DeleteAGroup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -104,6 +111,5 @@ func DeleteAGroup() gin.HandlerFunc {
 //func RemoveLikedMovies(Movie.Id)
 
 //func RemoveUser(User.id)
-
 
 //GetAllGroups for User Controller?
