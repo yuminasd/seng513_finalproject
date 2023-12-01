@@ -6,6 +6,7 @@ import (
 	"go-mongodb/models"
 	"go-mongodb/responses"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,21 +19,34 @@ import (
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
 var validate = validator.New()
 
-func CreateUser() gin.HandlerFunc { //Should probably check if it exists already
+func indexOf(element string, data []string) int {
+	for i := 0; i < len(data); i++ {
+		if data[i] == element {
+			return i
+		}
+	}
+	return -1
+}
+
+func CreateUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		var user models.User
 		defer cancel()
 
-		//validate the request body
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 
-		//use the validator library to validate required fields
 		if validationErr := validate.Struct(&user); validationErr != nil {
 			c.JSON(http.StatusBadRequest, responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"data": validationErr.Error()}})
+			return
+		}
+
+		err := userCollection.FindOne(ctx, bson.M{"emailaddress": string(user.EmailAddress)}).Decode(&user)
+		if err == nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": "User already exists!"}})
 			return
 		}
 
@@ -86,7 +100,6 @@ func GetAllUsers() gin.HandlerFunc {
 			return
 		}
 
-		//reading from the db in an optimal way
 		defer results.Close(ctx)
 		for results.Next(ctx) {
 			var singleUser models.User
@@ -130,16 +143,374 @@ func DeleteAUser() gin.HandlerFunc {
 	}
 }
 
-//func UpdateUser
+func UpdateUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		defer cancel()
+		var user models.User
 
-//func AddGroup
+		UpdatedUser := models.User{
+			Id:             user.Id,
+			Name:           user.Name,
+			EmailAddress:   user.EmailAddress,
+			Password:       user.Password,
+			Image:          user.Image,
+			GroupID:        user.GroupID,
+			LikedMovies:    user.LikedMovies,
+			DislikedMovies: user.DislikedMovies,
+		}
 
-//func RemoveGroup
+		_, err := userCollection.UpdateByID(ctx, userId, UpdatedUser)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
+		)
+	}
+}
 
-//func AddLiked
+func AddGroup() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		groupId := c.Param("groupId")
+		defer cancel()
+		var user models.User
 
-//func AddDisliked
+		objId, _ := primitive.ObjectIDFromHex(userId)
 
-//func GetLiked
+		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
 
-//func GetDisliked
+		UpdatedUser := models.User{
+			Id:             user.Id,
+			Name:           user.Name,
+			EmailAddress:   user.EmailAddress,
+			Password:       user.Password,
+			Image:          user.Image,
+			GroupID:        user.GroupID,
+			LikedMovies:    user.LikedMovies,
+			DislikedMovies: user.DislikedMovies,
+		}
+
+		if user.GroupID == nil {
+			var newGroup []string
+			newGroup = append(newGroup, groupId)
+			UpdatedUser.GroupID = newGroup
+		} else {
+			UpdatedUser.GroupID = append(UpdatedUser.GroupID, groupId)
+		}
+
+		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err1.Error()}})
+			return
+		}
+
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
+		)
+	}
+}
+
+func RemoveGroup() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		groupId := c.Param("groupId")
+		defer cancel()
+		var user models.User
+
+		objId, _ := primitive.ObjectIDFromHex(userId)
+
+		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		UpdatedUser := models.User{
+			Id:             user.Id,
+			Name:           user.Name,
+			EmailAddress:   user.EmailAddress,
+			Password:       user.Password,
+			Image:          user.Image,
+			GroupID:        user.GroupID,
+			LikedMovies:    user.LikedMovies,
+			DislikedMovies: user.DislikedMovies,
+		}
+
+		var index = indexOf(groupId, UpdatedUser.GroupID)
+		if user.GroupID != nil && index != -1 {
+			UpdatedUser.GroupID = slices.Delete(UpdatedUser.GroupID, index, index+1)
+		}
+
+		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err1.Error()}})
+			return
+		}
+
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
+		)
+	}
+}
+
+func AddLiked() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		movieId := c.Param("movieId")
+		defer cancel()
+		var user models.User
+
+		objId, _ := primitive.ObjectIDFromHex(userId)
+
+		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		UpdatedUser := models.User{
+			Id:             user.Id,
+			Name:           user.Name,
+			EmailAddress:   user.EmailAddress,
+			Password:       user.Password,
+			Image:          user.Image,
+			GroupID:        user.GroupID,
+			LikedMovies:    user.LikedMovies,
+			DislikedMovies: user.DislikedMovies,
+		}
+
+		if user.LikedMovies == nil {
+			var newLiked []string
+			newLiked = append(newLiked, movieId)
+			UpdatedUser.LikedMovies = newLiked
+		} else {
+			UpdatedUser.LikedMovies = append(UpdatedUser.LikedMovies, movieId)
+		}
+
+		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err1.Error()}})
+			return
+		}
+
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
+		)
+	}
+}
+
+func RemoveLiked() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		movieId := c.Param("movieId")
+		defer cancel()
+		var user models.User
+
+		objId, _ := primitive.ObjectIDFromHex(userId)
+
+		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		UpdatedUser := models.User{
+			Id:             user.Id,
+			Name:           user.Name,
+			EmailAddress:   user.EmailAddress,
+			Password:       user.Password,
+			Image:          user.Image,
+			GroupID:        user.GroupID,
+			LikedMovies:    user.LikedMovies,
+			DislikedMovies: user.DislikedMovies,
+		}
+
+		var index = indexOf(movieId, UpdatedUser.LikedMovies)
+		if user.LikedMovies != nil && index != -1 {
+			UpdatedUser.LikedMovies = slices.Delete(UpdatedUser.LikedMovies, index, index+1)
+		}
+
+		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err1.Error()}})
+			return
+		}
+
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
+		)
+	}
+}
+
+func AddDisliked() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		movieId := c.Param("movieId")
+		defer cancel()
+		var user models.User
+
+		objId, _ := primitive.ObjectIDFromHex(userId)
+
+		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		UpdatedUser := models.User{
+			Id:             user.Id,
+			Name:           user.Name,
+			EmailAddress:   user.EmailAddress,
+			Password:       user.Password,
+			Image:          user.Image,
+			GroupID:        user.GroupID,
+			LikedMovies:    user.LikedMovies,
+			DislikedMovies: user.DislikedMovies,
+		}
+
+		if user.LikedMovies == nil {
+			var newLiked []string
+			newLiked = append(newLiked, movieId)
+			UpdatedUser.DislikedMovies = newLiked
+		} else {
+			UpdatedUser.DislikedMovies = append(UpdatedUser.DislikedMovies, movieId)
+		}
+
+		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err1.Error()}})
+			return
+		}
+
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
+		)
+	}
+}
+
+func RemoveDisliked() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		movieId := c.Param("movieId")
+		defer cancel()
+		var user models.User
+
+		objId, _ := primitive.ObjectIDFromHex(userId)
+
+		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		UpdatedUser := models.User{
+			Id:             user.Id,
+			Name:           user.Name,
+			EmailAddress:   user.EmailAddress,
+			Password:       user.Password,
+			Image:          user.Image,
+			GroupID:        user.GroupID,
+			LikedMovies:    user.LikedMovies,
+			DislikedMovies: user.DislikedMovies,
+		}
+
+		var index = indexOf(movieId, UpdatedUser.DislikedMovies)
+		if user.DislikedMovies != nil && index != -1 {
+			UpdatedUser.DislikedMovies = slices.Delete(UpdatedUser.DislikedMovies, index, index+1)
+		}
+
+		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err1.Error()}})
+			return
+		}
+
+		c.JSON(http.StatusOK,
+			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
+		)
+	}
+}
+
+func GetLiked() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		var user models.User
+		defer cancel()
+
+		objId, _ := primitive.ObjectIDFromHex(userId)
+
+		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user.LikedMovies}})
+	}
+}
+
+func GetDisliked() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		userId := c.Param("userId")
+		var user models.User
+		defer cancel()
+
+		objId, _ := primitive.ObjectIDFromHex(userId)
+
+		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user.DislikedMovies}})
+	}
+}
+
+type LoginRequestBody struct {
+	Email    string
+	Password string
+}
+
+func CheckAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		var requestBody LoginRequestBody
+		var user models.User
+		defer cancel()
+
+		if errbody := c.BindJSON(&requestBody); errbody != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": errbody.Error()}})
+			return
+		}
+
+		err := userCollection.FindOne(ctx, bson.M{"emailaddress": requestBody.Email}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		if user.Password != requestBody.Password {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": "Not Authenticated"}})
+			return
+		}
+
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Authentication Successful"}})
+	}
+}
