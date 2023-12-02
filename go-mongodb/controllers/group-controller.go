@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"context"
-	"log"
 	"go-mongodb/configs"
 	"go-mongodb/models"
 	"go-mongodb/responses"
+	"log"
 	"net/http"
 	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,7 +19,7 @@ import (
 var groupCollection *mongo.Collection = configs.GetCollection(configs.DB, "groups")
 var validateG = validator.New()
 
-//Zainab
+// Zainab
 func CreateGroup() gin.HandlerFunc { //Should probably check if it exists already
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -38,11 +39,11 @@ func CreateGroup() gin.HandlerFunc { //Should probably check if it exists alread
 		}
 
 		newGroup := models.Group{
-			Id:           primitive.NewObjectID(),
-			Name:         group.Name,
-			Genre:        group.Genre,
-			Members:      group.Members,
-			LikedMovies:  group.LikedMovies,
+			Id:          primitive.NewObjectID(),
+			Name:        group.Name,
+			Genre:       group.Genre,
+			Members:     group.Members,
+			LikedMovies: group.LikedMovies,
 		}
 
 		result, err := groupCollection.InsertOne(ctx, newGroup)
@@ -55,7 +56,7 @@ func CreateGroup() gin.HandlerFunc { //Should probably check if it exists alread
 	}
 }
 
-//func GetGroupInfo(id) / get all name, users, genre
+// func GetGroupInfo(id) / get all name, users, genre
 func GetGroupInfo() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -77,7 +78,7 @@ func GetGroupInfo() gin.HandlerFunc {
 
 //func UpdateGroup(id) / group name, genre, code
 
-//func DeleteGroup(id)
+// func DeleteGroup(id)
 func DeleteAGroup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -105,7 +106,7 @@ func DeleteAGroup() gin.HandlerFunc {
 	}
 }
 
-//Mahian
+// Mahian
 func AddGenresToGroup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -407,19 +408,25 @@ func AddAllUsersLikedMoviesToGroup() gin.HandlerFunc {
 							log.Println("Movie Matched Genre:", movie.Id, movieGenre)
 							found := false
 							for idx, likedMovie := range group.LikedMovies {
-								if likedMovie.MovieId == likedMovieID {
+								if likedMovie.MovieId.Id == objLikedMovieID {
 									group.LikedMovies[idx].LikedCount++
 									found = true
 									break
 								}
 							}
+							var placeHolderMovie models.Movie
+							err := movieCollection.FindOne(ctx, bson.M{"id": objLikedMovieID}).Decode(&placeHolderMovie)
+							if err != nil {
+								log.Println("Error finding movie for ID:", objLikedMovieID)
+								continue
+							}
 							if !found {
 								group.LikedMovies = append(group.LikedMovies, models.Likedmovies{
-									MovieId:    likedMovieID,
+									MovieId:    placeHolderMovie,
 									LikedCount: 1,
 								})
 							}
-							break 
+							break
 						}
 					}
 				}
@@ -480,6 +487,7 @@ func DeleteLikedMovieFromGroup() gin.HandlerFunc {
 		movieID := c.Param("movieId")
 
 		var group models.Group
+		objMovieID, _ := primitive.ObjectIDFromHex(movieID)
 		objGroupID, _ := primitive.ObjectIDFromHex(groupID)
 
 		err := groupCollection.FindOne(ctx, bson.M{"id": objGroupID}).Decode(&group)
@@ -493,7 +501,7 @@ func DeleteLikedMovieFromGroup() gin.HandlerFunc {
 		}
 
 		for idx, likedMovie := range group.LikedMovies {
-			if likedMovie.MovieId == movieID {
+			if likedMovie.MovieId.Id == objMovieID {
 				if likedMovie.LikedCount > 1 {
 					group.LikedMovies[idx].LikedCount--
 				} else {
@@ -530,6 +538,7 @@ func AddMovieToGroupLikedMovies() gin.HandlerFunc {
 		movieID := c.Param("movieId")
 
 		var group models.Group
+		objMovieID, err := primitive.ObjectIDFromHex(movieID)
 		objGroupID, err := primitive.ObjectIDFromHex(groupID)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -548,7 +557,7 @@ func AddMovieToGroupLikedMovies() gin.HandlerFunc {
 		}
 
 		for idx, likedMovie := range group.LikedMovies {
-			if likedMovie.MovieId == movieID {
+			if likedMovie.MovieId.Id == objMovieID {
 				group.LikedMovies[idx].LikedCount++
 				_, err := groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
 				if err != nil {
@@ -565,8 +574,19 @@ func AddMovieToGroupLikedMovies() gin.HandlerFunc {
 			}
 		}
 
+		movieobjID, _ := primitive.ObjectIDFromHex(movieID)
+		var placeHolderMovie models.Movie
+		err1 := movieCollection.FindOne(ctx, bson.M{"id": movieobjID}).Decode(&placeHolderMovie)
+		if err1 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "error",
+				Data:    map[string]interface{}{"data": "Movie Doesn't Exist"},
+			})
+			return
+		}
 		group.LikedMovies = append(group.LikedMovies, models.Likedmovies{
-			MovieId:    movieID,
+			MovieId:    placeHolderMovie,
 			LikedCount: 1,
 		})
 		_, err = groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
@@ -589,7 +609,7 @@ func AddUserLikedMoviesToGroup() gin.HandlerFunc {
 		defer cancel()
 
 		groupID := c.Param("groupId")
-		userID := c.Param("userId") 
+		userID := c.Param("userId")
 		var group models.Group
 		objGroupID, _ := primitive.ObjectIDFromHex(groupID)
 
@@ -619,7 +639,11 @@ func AddUserLikedMoviesToGroup() gin.HandlerFunc {
 		log.Println("User Liked Movies:", user.LikedMovies)
 
 		if len(user.LikedMovies) == 0 {
-			log.Println("No liked movies for user ID:", user.Id)
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "error",
+				Data:    map[string]interface{}{"data": "No liked movies for user ID"},
+			})
 			return
 		}
 
@@ -643,15 +667,21 @@ func AddUserLikedMoviesToGroup() gin.HandlerFunc {
 						log.Println("Movie Matched Genre:", movie.Id, movieGenre)
 						found := false
 						for idx, likedMovie := range group.LikedMovies {
-							if likedMovie.MovieId == likedMovieID {
+							if likedMovie.MovieId.Id == objLikedMovieID {
 								group.LikedMovies[idx].LikedCount++
 								found = true
 								break
 							}
 						}
+						var placeHolderMovie models.Movie
+						err := movieCollection.FindOne(ctx, bson.M{"id": objLikedMovieID}).Decode(&placeHolderMovie)
+						if err != nil {
+							log.Println("Error finding movie for ID:", objLikedMovieID)
+							continue
+						}
 						if !found {
 							group.LikedMovies = append(group.LikedMovies, models.Likedmovies{
-								MovieId:    likedMovieID,
+								MovieId:    placeHolderMovie,
 								LikedCount: 1,
 							})
 						}
@@ -678,4 +708,3 @@ func AddUserLikedMoviesToGroup() gin.HandlerFunc {
 		})
 	}
 }
-

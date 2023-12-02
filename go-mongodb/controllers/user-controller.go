@@ -20,7 +20,16 @@ var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users"
 
 var validate = validator.New()
 
-func indexOf(element string, data []string) int {
+func indexOf(element string, data []models.Group) int {
+	for i := 0; i < len(data); i++ {
+		if data[i].Id.String() == element {
+			return i
+		}
+	}
+	return -1
+}
+
+func indexOfString(element string, data []string) int {
 	for i := 0; i < len(data); i++ {
 		if data[i] == element {
 			return i
@@ -200,12 +209,20 @@ func AddGroup() gin.HandlerFunc {
 			DislikedMovies: user.DislikedMovies,
 		}
 
+		groupID, _ := primitive.ObjectIDFromHex(groupId)
+		var newGroup models.Group
+		err2 := groupCollection.FindOne(ctx, bson.M{"id": groupID}).Decode(&newGroup)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err2.Error()}})
+			return
+		}
+
 		if user.GroupID == nil {
-			var newGroup []string
-			newGroup = append(newGroup, groupId)
-			UpdatedUser.GroupID = newGroup
+			var newGroupList []models.Group
+			newGroupList = append(newGroupList, newGroup)
+			UpdatedUser.GroupID = newGroupList
 		} else {
-			UpdatedUser.GroupID = append(UpdatedUser.GroupID, groupId)
+			UpdatedUser.GroupID = append(UpdatedUser.GroupID, newGroup)
 		}
 
 		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
@@ -338,7 +355,7 @@ func RemoveLiked() gin.HandlerFunc {
 			DislikedMovies: user.DislikedMovies,
 		}
 
-		var index = indexOf(movieId, UpdatedUser.LikedMovies)
+		var index = indexOfString(movieId, UpdatedUser.LikedMovies)
 		if user.LikedMovies != nil && index != -1 {
 			UpdatedUser.LikedMovies = slices.Delete(UpdatedUser.LikedMovies, index, index+1)
 		}
@@ -429,7 +446,7 @@ func RemoveDisliked() gin.HandlerFunc {
 			DislikedMovies: user.DislikedMovies,
 		}
 
-		var index = indexOf(movieId, UpdatedUser.DislikedMovies)
+		var index = indexOfString(movieId, UpdatedUser.DislikedMovies)
 		if user.DislikedMovies != nil && index != -1 {
 			UpdatedUser.DislikedMovies = slices.Delete(UpdatedUser.DislikedMovies, index, index+1)
 		}
