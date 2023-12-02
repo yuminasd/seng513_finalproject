@@ -13,5 +13,6 @@ func main() {
 	configs.ConnectDB()
 	router.Use(cors.Default())
 	routes.UserRoute(router)
+	//routes.GroupRoute(router)
 	router.Run("localhost:5000")
 }

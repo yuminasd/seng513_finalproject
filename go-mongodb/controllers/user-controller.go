@@ -17,6 +17,7 @@ import (
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
+
 var validate = validator.New()
 
 func indexOf(element string, data []string) int {
@@ -480,5 +481,37 @@ func GetDisliked() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user.DislikedMovies}})
+	}
+}
+
+type LoginRequestBody struct {
+	Email    string
+	Password string
+}
+
+func CheckAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		var requestBody LoginRequestBody
+		var user models.User
+		defer cancel()
+
+		if errbody := c.BindJSON(&requestBody); errbody != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": errbody.Error()}})
+			return
+		}
+
+		err := userCollection.FindOne(ctx, bson.M{"emailaddress": requestBody.Email}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		if user.Password != requestBody.Password {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": "Not Authenticated"}})
+			return
+		}
+
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Authentication Successful", "id": user.Id}})
 	}
 }
