@@ -1,8 +1,8 @@
 export interface Group {
-    groupName: string;
-    code: string;
-    users: User[];
-    movies: Movie[];
+    id: string;
+    name: string;
+    members: any[];
+    likedMovies: any[];
 }
 
 export interface User {
@@ -13,7 +13,12 @@ export interface User {
 }
 
 export interface Movie {
+    id: string;
     name: string;
     img: string;
+    bgImg: string;
     rating: number;
+    description: string;
+    genres: [];
+
 }
