@@ -12,7 +12,7 @@ func UserRoute(router *gin.Engine) {
 
 	router.GET("/users/liked/:userId", controllers.GetLiked())
 	router.GET("/users/disliked/:userId", controllers.GetDisliked())
-  
+
 	router.GET("/movies", controllers.GetAllMovies())
 	router.GET("/movies/:movieId", controllers.GetMovie())
 	router.GET("/moviesbygenre", controllers.GetMoviesByGenre())
@@ -32,17 +32,19 @@ func UserRoute(router *gin.Engine) {
 	router.PATCH("/adddisliked/:userId/:movieId", controllers.AddDisliked())
 	router.PATCH("/removedisliked/:userId/:movieId", controllers.RemoveDisliked())
 
-  //Group Controller
-  router.POST("/groups", controllers.CreateGroup())
-	router.GET("/groups/:groupId", controllers.GetGroupInfo())
-	router.DELETE("groups/:groupId", controllers.DeleteAGroup())
-	router.POST("/groups/:groupId/genres", controllers.AddGenresToGroup())
-	router.DELETE("/groups/:groupId/genres", controllers.DeleteGenresFromGroup())
-	router.POST("/groups/:groupId/members", controllers.AddMembersToGroup())
-	router.DELETE("/groups/:groupId/members/:userId", controllers.RemoveUserFromGroup())
-	router.POST("/groups/:groupId/likedmovies", controllers.AddAllUsersLikedMoviesToGroup())
+	//Group Controller
 	router.GET("/groups/:groupId/likedmovies", controllers.GetLikedMoviesFromGroup())
-	router.DELETE("/groups/:groupId/likedmovies/:movieId", controllers.DeleteLikedMovieFromGroup())
+	router.GET("/groups/:groupId", controllers.GetGroupInfo())
+
+	router.POST("/groups", controllers.CreateGroup())
+	router.POST("/groups/:groupId/genres", controllers.AddGenresToGroup())
+	router.POST("/groups/:groupId/members", controllers.AddMembersToGroup())
+	router.POST("/groups/:groupId/likedmovies", controllers.AddAllUsersLikedMoviesToGroup())
 	router.POST("/groups/:groupId/likedmovies/:movieId", controllers.AddMovieToGroupLikedMovies())
 	router.POST("/groups/:groupId/users/:userId/likedmovies", controllers.AddUserLikedMoviesToGroup())
+
+	router.DELETE("groups/:groupId", controllers.DeleteAGroup())
+	router.DELETE("/groups/:groupId/likedmovies/:movieId", controllers.DeleteLikedMovieFromGroup())
+	router.DELETE("/groups/:groupId/members/:userId", controllers.RemoveUserFromGroup())
+	router.DELETE("/groups/:groupId/genres", controllers.DeleteGenresFromGroup())
 }
