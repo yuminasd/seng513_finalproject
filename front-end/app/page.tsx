@@ -9,28 +9,10 @@ import { MockRead } from "./functions/users/read";
 
 
 function Home() {
+
   // Table Columns
   const columns = ['groupName', 'code'];
-  //Mock Data
-  // const groups: Group[] = [
-  //   {
-  //     GroupName: "Group1",
-  //     Code: "123",
-  //     users: [
-  //       {
-  //         name: "person1",
-  //         img: "",
-  //       }
-  //     ],
-  //     movies: [],
-  //   },
-  //   {
-  //     GroupName: "Group2",
-  //     Code: "456",
-  //     users: [],
-  //     movies: [],
-  //   },
-  // ];
+
 
   //Mock Button Click
   const handleButtonClick = () => {
@@ -38,26 +20,16 @@ function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col  pt-16">
+    <section >
       <Navbar />
-
-      {/* {groups.map((group, index) => (
-        // <a key={index} href={`/group/${group.groupCode}`}>
-        <a key={index} href={`/group`}>
-          {group.groupName}
-          {group.groupCode}
-        </a>
-      ))} */}
-
-
       <MockRead />
       <div className="w-full  flex gap-4 p-4">
         <JoinGroupModal />
         <CreateGroupModal />
       </div>
 
-      <Table columns={columns} data={groupsMock} />
-    </main>
+      <Table columns={columns} data={groupsMock} page="groups" />
+    </section>
   );
 };
 

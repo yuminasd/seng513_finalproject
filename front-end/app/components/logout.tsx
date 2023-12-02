@@ -14,7 +14,7 @@ const Logout = () => {
     return (
         <div>
             {/* Your logout button or trigger */}
-            <button onClick={handleLogout}>Logout</button>
+            <button className="font-xl text-white rounded bg-white bg-opacity-10 p-2 px-4 hover:text-red-500 " onClick={handleLogout}>Logout</button>
         </div>
     );
 };

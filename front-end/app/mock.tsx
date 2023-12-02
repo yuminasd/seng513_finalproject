@@ -1,8 +1,8 @@
 import { Group, Movie, User } from "./types"
 
 export let moviesMock: Movie[] = [{
-    name: "Stranger Things",
-    img: "https://occ-0-1168-299.1.nflxso.net/dnm/api/v6/E8vDc_W8CLv7-yMQu8KMEC7Rrr8/AAAABSpqYf-qwjTo6Bv_bRrj9_-f_Pi-CYcNZ1ICnyrp7a8CD2Cu4TyrntigqIw7CMFMj8f_Lr3zHq6G2WtkHs_bc8vsqISuGHe4lFyT.webp?r=fc0",
+    name: "The OA",
+    img: "https://occ-0-1168-299.1.nflxso.net/dnm/api/v6/6gmvu2hxdfnQ55LZZjyzYR4kzGk/AAAABVXuj1XWKq_TF-WSc6Pq0Dl5VSHmkOiCMHIUzZ3AyZg7NWd2JoFfeQvHNBdOJGKct_dhYAbC_3DGNAG-oHxaMzBnXB7AnEjqc0knZLgTgeo3e-nYN0CLRHrMPjC5YppyUup1.jpg?r=85c",
     rating: 500,
 },
 {
@@ -12,19 +12,17 @@ export let moviesMock: Movie[] = [{
 },
 
 {
-    name: "Stranger Things",
+    name: "DARK",
     img: "https://occ-0-1168-299.1.nflxso.net/dnm/api/v6/6gmvu2hxdfnQ55LZZjyzYR4kzGk/AAAABYuKjjKMzFh6RN2q7ml5nJDrNguQzImqCdD7tTYKKUXYnliwYVjasxzPERdiwpcDhL8zqUyaRHnRhYWtajxpwaRLf1FUTtHR7CGGFkn028rZF0CCpGfBAYA-e6H0DdaVUrdO.jpg?r=393",
     rating: 500,
 },
 {
-    name: "Stranger Things",
-    img: "https://occ-0-1168-299.1.nflxso.net/dnm/api/v6/E8vDc_W8CLv7-yMQu8KMEC7Rrr8/AAAABSpqYf-qwjTo6Bv_bRrj9_-f_Pi-CYcNZ1ICnyrp7a8CD2Cu4TyrntigqIw7CMFMj8f_Lr3zHq6G2WtkHs_bc8vsqISuGHe4lFyT.webp?r=fc0",
-    rating: 500,
+    name: "Altered Carbon",
+    img: " https://occ-0-1168-299.1.nflxso.net/dnm/api/v6/6gmvu2hxdfnQ55LZZjyzYR4kzGk/AAAABdiUookKGsY-jFH8p-YKtpeSZ0JD1UeGrzMd946ERVCw16h6_msxXrWa3Oi3lc3Hggl0ogaZ7BqDZslDSqJIPAd4860et1KFT9AdYGbUQmOLZy08I1Od6RasNF3hc1Oe8pS_.jpg?r=525", rating: 500,
 },
 {
-    name: "Stranger Things",
-    img: "https://occ-0-1168-299.1.nflxso.net/dnm/api/v6/E8vDc_W8CLv7-yMQu8KMEC7Rrr8/AAAABSpqYf-qwjTo6Bv_bRrj9_-f_Pi-CYcNZ1ICnyrp7a8CD2Cu4TyrntigqIw7CMFMj8f_Lr3zHq6G2WtkHs_bc8vsqISuGHe4lFyT.webp?r=fc0",
-    rating: 500,
+    name: "Travelers",
+    img: "https://occ-0-1168-299.1.nflxso.net/dnm/api/v6/6gmvu2hxdfnQ55LZZjyzYR4kzGk/AAAABd9eAePC0rHO92Jv8Yo-vlBQ6vylDNRKqBI63XNZN4RmdL9LmyuWlBfXMGL5bEn90TT1uUmK0tawHJ_a9cbhrtuPjn3oDcifFhyDejf0Ksb56nLqqVSpnWtOwhcKg0YgJ9zH.jpg?r=b93", rating: 500,
 },]
 
 export let usersMock: User[] =

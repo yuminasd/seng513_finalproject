@@ -12,11 +12,6 @@ const Modal: React.FC<ModalProps> = ({ hidden, onClose }) => {
         onClose();
     };
 
-    const findRoom = () => {
-        console.log("Room Found");
-        onClose();
-    };
-
     let code = "";
 
     if (!hidden) {

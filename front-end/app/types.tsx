@@ -9,6 +9,7 @@ export interface User {
     name: string;
     img: string;
     password?: string;
+    // movies: Movie[];
 }
 
 export interface Movie {
