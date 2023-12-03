@@ -427,6 +427,11 @@ func AddMembersToGroup() gin.HandlerFunc {
 			return
 		}
 
+		for i := 0; i < len(memberIDs); i++ {
+			userid, _ := primitive.ObjectIDFromHex(memberIDs[i])
+			AddUsersLikedMovies(userid, group.Id, ctx, c)
+		}
+
 		c.JSON(http.StatusOK, responses.UserResponse{
 			Status:  http.StatusOK,
 			Message: "success",
@@ -846,5 +851,92 @@ func AddUserLikedMoviesToGroup() gin.HandlerFunc {
 			Message: "success",
 			Data:    map[string]interface{}{"data": "Liked movies added to the group"},
 		})
+	}
+}
+
+func AddUsersLikedMovies(objUserID primitive.ObjectID, objGroupID primitive.ObjectID, ctx context.Context, c *gin.Context) {
+	var group models.Group
+	updateGroup(objGroupID)
+
+	err := groupCollection.FindOne(ctx, bson.M{"id": objGroupID}).Decode(&group)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.UserResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "error",
+			Data:    map[string]interface{}{"data": err.Error()},
+		})
+		return
+	}
+
+	var user models.User
+	err = userCollection.FindOne(ctx, bson.M{"id": objUserID}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.UserResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "error",
+			Data:    map[string]interface{}{"data": err.Error()},
+		})
+		return
+	}
+
+	if len(user.LikedMovies) == 0 {
+		c.JSON(http.StatusInternalServerError, responses.UserResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "error",
+			Data:    map[string]interface{}{"data": "No liked movies for user ID"},
+		})
+		return
+	}
+
+	for _, likedMovieID := range user.LikedMovies {
+		log.Println("Checking movies for user ID:", user.Id)
+		log.Println("Liked Movie ID:", likedMovieID)
+		objLikedMovieID, _ := primitive.ObjectIDFromHex(likedMovieID)
+
+		var movie models.Movie
+		err := movieCollection.FindOne(ctx, bson.M{"id": objLikedMovieID}).Decode(&movie)
+		if err != nil {
+			log.Println("Error finding movie for ID:", objLikedMovieID)
+			continue
+		}
+
+		for _, movieGenre := range movie.Genres {
+			for _, groupGenre := range group.Genre {
+				if movieGenre == groupGenre {
+					log.Println("Movie Matched Genre:", movie.Id, movieGenre)
+					found := false
+					for idx, likedMovie := range group.LikedMovies {
+						if likedMovie.MovieId.Id == objLikedMovieID {
+							group.LikedMovies[idx].LikedCount++
+							found = true
+							break
+						}
+					}
+					var placeHolderMovie models.Movie
+					err := movieCollection.FindOne(ctx, bson.M{"id": objLikedMovieID}).Decode(&placeHolderMovie)
+					if err != nil {
+						log.Println("Error finding movie for ID:", objLikedMovieID)
+						continue
+					}
+					if !found {
+						group.LikedMovies = append(group.LikedMovies, models.Likedmovies{
+							MovieId:    placeHolderMovie,
+							LikedCount: 1,
+						})
+					}
+					break
+				}
+			}
+		}
+	}
+
+	_, err = groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, responses.UserResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "error",
+			Data:    map[string]interface{}{"data": err.Error()},
+		})
+		return
 	}
 }
