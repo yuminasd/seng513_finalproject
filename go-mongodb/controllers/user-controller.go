@@ -5,8 +5,10 @@ import (
 	"go-mongodb/configs"
 	"go-mongodb/models"
 	"go-mongodb/responses"
+	"log"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,9 +22,36 @@ var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users"
 
 var validate = validator.New()
 
+func updateUserGroups(userID primitive.ObjectID) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var user models.User
+
+	err := userCollection.FindOne(ctx, bson.M{"id": userID}).Decode(&user)
+	if err != nil {
+		return
+	}
+
+	var newGroupList []models.Group
+	var newGroup models.Group
+	for i := 0; i < len(user.GroupID); i++ {
+		groupID := user.GroupID[i].Id
+		err := groupCollection.FindOne(ctx, bson.M{"id": groupID}).Decode(&newGroup)
+		if err != nil {
+			continue
+		}
+		newGroup.Members = nil
+		newGroupList = append(newGroupList, newGroup)
+	}
+
+	user.GroupID = newGroupList
+	userCollection.ReplaceOne(ctx, bson.M{"id": userID}, user)
+}
+
 func indexOf(element string, data []models.Group) int {
 	for i := 0; i < len(data); i++ {
-		if data[i].Id.String() == element {
+		log.Printf(data[i].Id.String(), " \n", element)
+		if strings.Contains(data[i].Id.String(), element) {
 			return i
 		}
 	}
@@ -87,6 +116,7 @@ func GetUser() gin.HandlerFunc {
 
 		objId, _ := primitive.ObjectIDFromHex(userId)
 
+		updateUserGroups(objId)
 		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -114,6 +144,24 @@ func GetAllUsers() gin.HandlerFunc {
 		for results.Next(ctx) {
 			var singleUser models.User
 			if err = results.Decode(&singleUser); err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			}
+
+			updateUserGroups(singleUser.Id)
+		}
+
+		result, err := userCollection.Find(ctx, bson.M{})
+
+		//Somewhat redundant code but has to loop through list of users to update group to make sure groups are up to date
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		defer result.Close(ctx)
+		for result.Next(ctx) {
+			var singleUser models.User
+			if err = result.Decode(&singleUser); err != nil {
 				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			}
 
@@ -234,6 +282,7 @@ func AddGroup() gin.HandlerFunc {
 		c.JSON(http.StatusOK,
 			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
 		)
+
 	}
 }
 
@@ -264,9 +313,14 @@ func RemoveGroup() gin.HandlerFunc {
 			DislikedMovies: user.DislikedMovies,
 		}
 
-		var index = indexOf(groupId, UpdatedUser.GroupID)
+		var index = indexOf(groupId, user.GroupID)
 		if user.GroupID != nil && index != -1 {
-			UpdatedUser.GroupID = slices.Delete(UpdatedUser.GroupID, index, index+1)
+			if len(user.GroupID) == 1 {
+				UpdatedUser.GroupID = nil
+
+			} else {
+				UpdatedUser.GroupID = slices.Delete(UpdatedUser.GroupID, index, index+1)
+			}
 		}
 
 		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
