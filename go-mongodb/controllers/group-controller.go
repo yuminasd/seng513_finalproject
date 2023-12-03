@@ -19,6 +19,33 @@ import (
 var groupCollection *mongo.Collection = configs.GetCollection(configs.DB, "groups")
 var validateG = validator.New()
 
+func updateGroup(groupID primitive.ObjectID) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var group models.Group
+
+	err := groupCollection.FindOne(ctx, bson.M{"id": groupID}).Decode(&group)
+	if err != nil {
+		return
+	}
+
+	var newUserList []models.User
+	var newUser models.User
+	for i := 0; i < len(group.Members); i++ {
+		groupID := group.Members[i].Id
+		updateUserGroups(group.Members[i].Id)
+		err := userCollection.FindOne(ctx, bson.M{"id": groupID}).Decode(&newUser)
+		if err != nil {
+			continue
+		}
+		newUser.GroupID = nil
+		newUserList = append(newUserList, newUser)
+	}
+
+	group.Members = newUserList
+	userCollection.ReplaceOne(ctx, bson.M{"id": groupID}, group)
+}
+
 type GroupIdReturn struct {
 	InsertedID primitive.ObjectID
 }
@@ -69,6 +96,7 @@ func GetGroupInfo() gin.HandlerFunc {
 		defer cancel()
 
 		objId, _ := primitive.ObjectIDFromHex(groupId)
+		updateGroup(objId)
 
 		err := groupCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&group)
 		if err != nil {
@@ -542,9 +570,9 @@ func AddMovieToGroupLikedMovies() gin.HandlerFunc {
 		movieID := c.Param("movieId")
 
 		var group models.Group
-		objMovieID, err := primitive.ObjectIDFromHex(movieID)
+		objMovieID, err2 := primitive.ObjectIDFromHex(movieID)
 		objGroupID, err := primitive.ObjectIDFromHex(groupID)
-		if err != nil {
+		if err != nil || err2 != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "Invalid group ID",
 			})
@@ -616,6 +644,7 @@ func AddUserLikedMoviesToGroup() gin.HandlerFunc {
 		userID := c.Param("userId")
 		var group models.Group
 		objGroupID, _ := primitive.ObjectIDFromHex(groupID)
+		updateGroup(objGroupID)
 
 		err := groupCollection.FindOne(ctx, bson.M{"id": objGroupID}).Decode(&group)
 		if err != nil {
