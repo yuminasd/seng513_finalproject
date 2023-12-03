@@ -83,6 +83,33 @@ func CreateGroup() gin.HandlerFunc { //Should probably check if it exists alread
 		}
 		var results GroupIdReturn
 		results.InsertedID = newGroup.Id
+		var user models.User
+		if newGroup.Members != nil {
+			for i := 0; i < len(newGroup.Members); i++ {
+				var objId = newGroup.Members[i].Id
+				err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+					return
+				}
+
+				if user.GroupID == nil {
+					var newGroupList []models.Group
+					newGroupList = append(newGroupList, newGroup)
+					user.GroupID = newGroupList
+				} else {
+					user.GroupID = append(user.GroupID, newGroup)
+				}
+
+				_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, user)
+				if err1 != nil {
+					c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err1.Error()}})
+					return
+				}
+
+			}
+		}
+
 		c.JSON(http.StatusCreated, responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": results}})
 	}
 }
