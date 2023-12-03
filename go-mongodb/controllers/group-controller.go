@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"sort"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -296,6 +297,23 @@ func AddMembersToGroup() gin.HandlerFunc {
 		}
 
 		for _, memberID := range memberIDs {
+			userID, _ := primitive.ObjectIDFromHex(memberID)
+			_, err = userCollection.UpdateOne(
+				ctx,
+				bson.M{"id": userID},
+				bson.M{"$addToSet": bson.M{"groupID": group}},
+			)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{
+					Status:  http.StatusInternalServerError,
+					Message: "error",
+					Data:    map[string]interface{}{"data": err.Error()},
+				})
+				return
+			}
+		}
+
+		for _, memberID := range memberIDs {
 			var user models.User
 			userID, _ := primitive.ObjectIDFromHex(memberID)
 			err := userCollection.FindOne(ctx, bson.M{"id": userID}).Decode(&user)
@@ -323,7 +341,7 @@ func AddMembersToGroup() gin.HandlerFunc {
 		c.JSON(http.StatusOK, responses.UserResponse{
 			Status:  http.StatusOK,
 			Message: "success",
-			Data:    map[string]interface{}{"data": "Members successfully added to the group!"},
+			Data:    map[string]interface{}{"data": "Members successfully added to the group"},
 		})
 	}
 }
@@ -366,8 +384,22 @@ func RemoveUserFromGroup() gin.HandlerFunc {
 		}
 
 		group.Members = append(group.Members[:userIndex], group.Members[userIndex+1:]...)
-
 		_, err = groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "error",
+				Data:    map[string]interface{}{"data": err.Error()},
+			})
+			return
+		}
+
+		userObjID, _ := primitive.ObjectIDFromHex(userID)
+		_, err = userCollection.UpdateOne(
+			ctx,
+			bson.M{"id": userObjID},
+			bson.M{"$pull": bson.M{"groupID": bson.M{"id": objGroupID}}},
+		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{
 				Status:  http.StatusInternalServerError,
@@ -741,3 +773,36 @@ func AddUserLikedMoviesToGroup() gin.HandlerFunc {
 		})
 	}
 }
+
+func GetLikedMoviesSorted() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+        defer cancel()
+
+        groupID := c.Param("groupId")
+        objGroupID, _ := primitive.ObjectIDFromHex(groupID)
+
+        var group models.Group
+        err := groupCollection.FindOne(ctx, bson.M{"id": objGroupID}).Decode(&group)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, responses.UserResponse{
+                Status:  http.StatusInternalServerError,
+                Message: "error",
+                Data:    map[string]interface{}{"data": err.Error()},
+            })
+            return
+        }
+
+        sort.SliceStable(group.LikedMovies, func(i, j int) bool {
+            return group.LikedMovies[i].LikedCount > group.LikedMovies[j].LikedCount
+        })
+
+        c.JSON(http.StatusOK, gin.H{
+            "data": gin.H{
+                "likedMovies": group.LikedMovies,
+            },
+        })
+    }
+}
+
+

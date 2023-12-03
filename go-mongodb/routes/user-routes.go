@@ -35,6 +35,7 @@ func UserRoute(router *gin.Engine) {
 	//Group Controller
 	router.GET("/groups/:groupId/likedmovies", controllers.GetLikedMoviesFromGroup())
 	router.GET("/groups/:groupId", controllers.GetGroupInfo())
+	router.GET("/groups/:groupId/liked-movies", controllers.GetLikedMoviesSorted())
 
 	router.POST("/groups", controllers.CreateGroup())
 	router.POST("/groups/:groupId/genres", controllers.AddGenresToGroup())
