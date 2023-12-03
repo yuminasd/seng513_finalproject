@@ -19,7 +19,10 @@ import (
 var groupCollection *mongo.Collection = configs.GetCollection(configs.DB, "groups")
 var validateG = validator.New()
 
-// Zainab
+type GroupIdReturn struct {
+	InsertedID primitive.ObjectID
+}
+
 func CreateGroup() gin.HandlerFunc { //Should probably check if it exists already
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -46,13 +49,14 @@ func CreateGroup() gin.HandlerFunc { //Should probably check if it exists alread
 			LikedMovies: group.LikedMovies,
 		}
 
-		result, err := groupCollection.InsertOne(ctx, newGroup)
+		_, err := groupCollection.InsertOne(ctx, newGroup)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
-
-		c.JSON(http.StatusCreated, responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		var results GroupIdReturn
+		results.InsertedID = newGroup.Id
+		c.JSON(http.StatusCreated, responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": results}})
 	}
 }
 
