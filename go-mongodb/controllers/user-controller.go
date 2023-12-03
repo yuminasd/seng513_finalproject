@@ -342,12 +342,19 @@ func AddLiked() gin.HandlerFunc {
 		movieId := c.Param("movieId")
 		defer cancel()
 		var user models.User
-
+		var movie models.Movie
 		objId, _ := primitive.ObjectIDFromHex(userId)
+		movieID, _ := primitive.ObjectIDFromHex(movieId)
 
 		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		err2 := movieCollection.FindOne(ctx, bson.M{"id": movieID}).Decode(&movie)
+		if err2 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err2.Error()}})
 			return
 		}
 
@@ -376,9 +383,68 @@ func AddLiked() gin.HandlerFunc {
 			return
 		}
 
+		for i := 0; i < len(UpdatedUser.GroupID); i++ {
+			for k := 0; k < len(movie.Genres); k++ {
+				if slices.Contains(UpdatedUser.GroupID[i].Genre, movie.Genres[k]) {
+					AddMovieToGroupLiked(movieID, UpdatedUser.GroupID[i].Id, c, ctx)
+					break
+				}
+			}
+		}
+
 		c.JSON(http.StatusOK,
 			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
 		)
+	}
+}
+
+func AddMovieToGroupLiked(objMovieID primitive.ObjectID, objGroupID primitive.ObjectID, c *gin.Context, ctx context.Context) {
+	var group models.Group
+	var err = groupCollection.FindOne(ctx, bson.M{"id": objGroupID}).Decode(&group)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error finding group",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	for idx, likedMovie := range group.LikedMovies {
+		if likedMovie.MovieId.Id == objMovieID {
+			group.LikedMovies[idx].LikedCount++
+			_, err := groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Error updating group",
+					"error":   err.Error(),
+				})
+				return
+			}
+			return
+		}
+	}
+
+	var placeHolderMovie models.Movie
+	err1 := movieCollection.FindOne(ctx, bson.M{"id": objMovieID}).Decode(&placeHolderMovie)
+	if err1 != nil {
+		c.JSON(http.StatusInternalServerError, responses.UserResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "error",
+			Data:    map[string]interface{}{"data": "Movie Doesn't Exist"},
+		})
+		return
+	}
+	group.LikedMovies = append(group.LikedMovies, models.Likedmovies{
+		MovieId:    placeHolderMovie,
+		LikedCount: 1,
+	})
+	_, err = groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error updating group",
+			"error":   err.Error(),
+		})
+		return
 	}
 }
 
