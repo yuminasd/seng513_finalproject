@@ -8,7 +8,7 @@ type User struct {
 	EmailAddress   string             `json:"emailaddress,omitempty" validate:"required"`
 	Password       string             `json:"password,omitempty" validate:"required"`
 	Image          string             `json:"image,omitempty" validate:"required"`
-	GroupID        []string           `json:"groupID,omitempty"`
+	GroupID        []Group            `json:"groupID,omitempty"`
 	LikedMovies    []string           `json:"likedMovies,omitempty"`
 	DislikedMovies []string           `json:"dislikedMovies,omitempty"`
 }
