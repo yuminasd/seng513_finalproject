@@ -14,6 +14,9 @@ export default function Page() {
     return (
         <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
             <div className="w-120 text-center">
+                {/* MovieMatch Logo */}
+                <img src="./logo.png" alt="Logo" className="mb-4" />
+
                 <h1 className="text-3xl font-bold mb-4">
                     <span className="text-white">Welcome To</span>
                     <span className="text-purple-500"> Movie Match</span>
