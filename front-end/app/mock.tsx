@@ -36,7 +36,6 @@ export let usersMock: User[] =
     },]
 
 
-
 export let groupsMock: Group[] = [{
     groupName: "Group1",
     code: "1",

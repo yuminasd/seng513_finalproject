@@ -17,14 +17,14 @@ const Table: React.FC<TableProps> = ({ columns, data, page }) => {
             router.push(`/group/${groupCode}`);
         }
         else if (page === "group") {
-            router.push(`/profile`);
+            router.push(`/profile/${groupCode}`);
         }
 
     }
 
     return (
-        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-opacity-10 dark:text-gray-400">
+        <table className="w-full text-sm text-left rtl:text-right text-neutral-500 dark:text-neutral-400">
+            <thead className="text-xs text-neutral-700 uppercase bg-neutral-50 dark:bg-opacity-10 dark:text-neutral-400">
                 <tr>
                     {/* Map through columns to create table header cells */}
                     {columns.map((column, index) => (

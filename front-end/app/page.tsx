@@ -7,24 +7,23 @@ import Table from "./components/table";
 import CreateGroupModal from "./components/create_group/CreateGroupModal";
 import { groupsMock } from "./mock";
 import { MockRead } from "./functions/users/read";
+import { Group, User } from './types';
 
-interface Group {
-  groupName: string;
-  code: string;
-  // Add more properties if needed
-}
+
 function Home() {
   const [groups, setGroups] = useState<Group[]>([]);
+  const [user, setUser] = useState<User | null>(null);
   // Table Columns
-  const columns = ['groupName', 'code'];
+  const columns = ['name', 'id'];
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/groups/65692dca06a2d9ee2acd91e4');
+        const response = await fetch('http://localhost:5000/users/656500413c49f1af1a59b5d1');
         const data = await response.json();
-        console.log(data.data.data);
-        setGroups(data);
+        // console.log(data.data.data);
+        setGroups(data.data.data.groupID);
+        setUser(data.data.data);
       } catch (error) {
         console.error('Error fetching groups data:', error);
       }
@@ -38,11 +37,16 @@ function Home() {
       <Navbar />
       {/* <MockRead /> */}
       <div className="w-full  flex gap-4 p-4">
-        <JoinGroupModal />
-        <CreateGroupModal />
+        <JoinGroupModal user={user} />
+        <CreateGroupModal user={user} />
       </div>
+      {groups ? (
+        <Table columns={columns} data={groups} page="groups" />
+      ) : (
+        <p>Loading group data...</p>
+      )}
 
-      <Table columns={columns} data={groupsMock} page="groups" />
+
     </section>
   );
 };

@@ -6,6 +6,7 @@ export interface Group {
 }
 
 export interface User {
+    id: string;
     name: string;
     img: string;
     password?: string;
