@@ -17,12 +17,14 @@ export default function Profile({ params }: { params: { slug: number } }) {
                     }
                 });
                 const data = await response.json();
-                // console.log(data.data.data);
+                console.log(data.data.data);
                 setUser(data.data.data as User);
             } catch (error) {
                 console.error('Error fetching groups data:', error);
             }
         };
+
+
         fetchData();
     }, []);
     return (
@@ -36,16 +38,16 @@ export default function Profile({ params }: { params: { slug: number } }) {
             </form>
             <div className=" flex flex-col gap-4  text-center ">
                 <p> List of all liked movies</p>
-                {user?.groupID ? (
+                {/* {user?.likedMovies ? (
                     <div className=" grid lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-1  gap-4 justify-start h-screen overflow-y-auto content-start px-4 ">
-                        {user.groupID[0].likedMovies.map((movie, index) => (
+                        {user.likedMovies.map((movie, index) => (
                             <MovieCard key={index} movie={movie.movieId} />
                         ))}
                     </div>
                 ) : (
                     <p>Loading Movies data...</p>
                 )
-                }
+                } */}
             </div>
 
         </section>
