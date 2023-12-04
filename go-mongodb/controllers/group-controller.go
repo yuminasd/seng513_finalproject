@@ -860,50 +860,31 @@ func AddUsersLikedMovies(objUserID primitive.ObjectID, objGroupID primitive.Obje
 
 	err := groupCollection.FindOne(ctx, bson.M{"id": objGroupID}).Decode(&group)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, responses.UserResponse{
-			Status:  http.StatusInternalServerError,
-			Message: "error",
-			Data:    map[string]interface{}{"data": err.Error()},
-		})
 		return
 	}
 
 	var user models.User
 	err = userCollection.FindOne(ctx, bson.M{"id": objUserID}).Decode(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, responses.UserResponse{
-			Status:  http.StatusInternalServerError,
-			Message: "error",
-			Data:    map[string]interface{}{"data": err.Error()},
-		})
 		return
 	}
 
 	if len(user.LikedMovies) == 0 {
-		c.JSON(http.StatusInternalServerError, responses.UserResponse{
-			Status:  http.StatusInternalServerError,
-			Message: "error",
-			Data:    map[string]interface{}{"data": "No liked movies for user ID"},
-		})
 		return
 	}
 
 	for _, likedMovieID := range user.LikedMovies {
-		log.Println("Checking movies for user ID:", user.Id)
-		log.Println("Liked Movie ID:", likedMovieID)
 		objLikedMovieID, _ := primitive.ObjectIDFromHex(likedMovieID)
 
 		var movie models.Movie
 		err := movieCollection.FindOne(ctx, bson.M{"id": objLikedMovieID}).Decode(&movie)
 		if err != nil {
-			log.Println("Error finding movie for ID:", objLikedMovieID)
 			continue
 		}
 
 		for _, movieGenre := range movie.Genres {
 			for _, groupGenre := range group.Genre {
 				if movieGenre == groupGenre {
-					log.Println("Movie Matched Genre:", movie.Id, movieGenre)
 					found := false
 					for idx, likedMovie := range group.LikedMovies {
 						if likedMovie.MovieId.Id == objLikedMovieID {
@@ -915,7 +896,6 @@ func AddUsersLikedMovies(objUserID primitive.ObjectID, objGroupID primitive.Obje
 					var placeHolderMovie models.Movie
 					err := movieCollection.FindOne(ctx, bson.M{"id": objLikedMovieID}).Decode(&placeHolderMovie)
 					if err != nil {
-						log.Println("Error finding movie for ID:", objLikedMovieID)
 						continue
 					}
 					if !found {
@@ -932,11 +912,6 @@ func AddUsersLikedMovies(objUserID primitive.ObjectID, objGroupID primitive.Obje
 
 	_, err = groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, responses.UserResponse{
-			Status:  http.StatusInternalServerError,
-			Message: "error",
-			Data:    map[string]interface{}{"data": err.Error()},
-		})
 		return
 	}
 }

@@ -598,7 +598,18 @@ func GetLiked() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user.LikedMovies}})
+		var movieList []models.Movie
+		var movie models.Movie
+		for i := 0; i < len(user.LikedMovies); i++ {
+			var movieID, _ = primitive.ObjectIDFromHex(user.LikedMovies[i])
+			err := movieCollection.FindOne(ctx, bson.M{"id": movieID}).Decode(&movie)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+				return
+			}
+			movieList = append(movieList, movie)
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": movieList}})
 	}
 }
 
