@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '../components/button';
+import logo from "/logo.png"
 
 export default function Page() {
     const router = useRouter();
@@ -15,7 +16,7 @@ export default function Page() {
         <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
             <div className="w-120 text-center">
                 {/* MovieMatch Logo */}
-                <img src="./logo.png" alt="Logo" className="mb-4" />
+                <img src="/logo.png" alt="logo" className="mb-4" />
 
                 <h1 className="text-3xl font-bold mb-4">
                     <span className="text-white">Welcome To</span>
