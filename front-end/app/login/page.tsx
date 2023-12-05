@@ -2,14 +2,34 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '../components/button';
-import logo from "/logo.png"
 
 export default function Page() {
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
-    const handleLogin = () => {
-        router.push('/');
+    const handleLogin = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/checklogin', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
+
+            if (response.ok) {
+                // Login successful, redirect to the desired page
+                router.push('/');
+            } else {
+                // Handle login failure
+                console.error('Login failed');
+            }
+        } catch (error) {
+            // Handle fetch error
+            console.error('Error during login:', error);
+        }
     };
 
     return (
@@ -24,7 +44,13 @@ export default function Page() {
                 </h1>
                 <div className="mb-4 w-120">
                     <label className="text-white block mb-1 text-left">Email</label>
-                    <input className="my-2 p-2 w-full border rounded text-gray-500 bg-gray-800 border-transparent" type="text" placeholder="Email" />
+                    <input
+                        className="my-2 p-2 w-full border rounded text-gray-500 bg-gray-800 border-transparent"
+                        type="text"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
                 </div>
 
                 <div className="mb-4 w-120 relative">
@@ -34,6 +60,8 @@ export default function Page() {
                             className="my-2 p-2 w-full border rounded text-gray-500 bg-gray-800 border-transparent"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
                         <span
                             className="text-gray-400 text-sm cursor-pointer ml-2 bg-gray-800 p-2 rounded"
@@ -44,7 +72,7 @@ export default function Page() {
                     </div>
                 </div>
 
-                <Button text="Sign In" color="primary" onClick={handleLogin} className="w-full" />
+                <Button text="Sign In" color="primary" onClick={handleLogin} />
                 <div className="mt-2 text-gray-400 text-sm cursor-pointer">Create Account</div>
             </div>
         </div>
