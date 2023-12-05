@@ -26,20 +26,6 @@ export default function Group({ params }: { params: { slug: number } }) {
                 const data = await response.json();
                 console.log(data.data.data);
                 setGroup(data.data.data as Group);
-
-                // data.data.data.likedMovies.forEach(function(movie: {likedCount:string,movieId:string }) {
-                //     await fetch("http://localhost:5000/movies")
-                // })
-
-                // const moviesResponse = await fetch('http://localhost:5000/movies', {
-                //     method: 'GET',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //     }
-                // });
-                // const movieResponse = await moviesResponse.json();
-                // console.log(movieResponse.data.data);
-                // setMovies(movieResponse.data.data);
             } catch (error) {
                 console.error('Error fetching groups data:', error);
             }
