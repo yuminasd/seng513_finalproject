@@ -16,7 +16,7 @@ export default function Page() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ "email":email, "password":password }),
+                body: JSON.stringify({ "email": email, "password": password }),
             });
             console.log(response)
             if (response.ok) {
@@ -37,7 +37,9 @@ export default function Page() {
         <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
             <div className="w-120 text-center">
                 {/* MovieMatch Logo */}
-                <img src="/logo.png" alt="logo" className="mb-4" />
+                <div className="mb-4">
+                    <img src="/logo.png" alt="logo" className="mx-auto" />
+                </div>
 
                 <h1 className="text-3xl font-bold mb-4">
                     <span className="text-white">Welcome To</span>
