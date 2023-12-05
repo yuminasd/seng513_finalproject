@@ -33,7 +33,7 @@ function Home() {
   }, []);
 
   return (
-    <section >
+    <section className="h-screen overflow-y-auto pb-36">
       <Navbar />
       {/* <MockRead /> */}
       <div className="w-full  flex gap-4 p-4">
