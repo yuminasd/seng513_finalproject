@@ -12,18 +12,19 @@ export default function Page() {
     const handleLogin = async () => {
         try {
             const response = await fetch('http://localhost:5000/checklogin', {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ "email":email, "password":password }),
             });
-
+            console.log(response)
             if (response.ok) {
                 // Login successful, redirect to the desired page
-                router.push('/');
+                router.push('/?userid=656500413c49f1af1a59b5d1');
+                //get user id from response and append to string
             } else {
-                // Handle login failure
+                // Handle login failure****
                 console.error('Login failed');
             }
         } catch (error) {
