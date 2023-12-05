@@ -20,13 +20,14 @@ export default function Page() {
             });
             console.log(response)
             if (response.ok) {
-                // Login successful, redirect to the desired page
-                router.push('/?userid=656500413c49f1af1a59b5d1');
-                //get user id from response and append to string
+                const responseData = await response.json();
+                console.log(responseData)
+                const userId = responseData.data.id; // Adjust the field name based on your API response
+                router.push(`/?userid=${userId}`);
             } else {
                 // Handle login failure****
                 console.error('Login failed');
-            }
+            }            
         } catch (error) {
             // Handle fetch error
             console.error('Error during login:', error);
