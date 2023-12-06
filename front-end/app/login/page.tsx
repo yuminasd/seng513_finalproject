@@ -5,11 +5,16 @@ import Button from '../components/button';
 
 // ...
 
+// ...
+
+// ...
+
 export default function Page() {
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showError, setShowError] = useState(false); // New state for error pop-up
 
     const handleLogin = async () => {
         try {
@@ -20,8 +25,9 @@ export default function Page() {
                 },
                 body: JSON.stringify({ "email": email, "password": password }),
             });
-            console.log(response)
+
             if (response.ok) {
+                // Handle successful login
                 try {
                     const responseData = await response.json();
                     console.log(responseData);
@@ -32,7 +38,6 @@ export default function Page() {
                     localStorage.setItem('userId', userId);
                     localStorage.setItem('userRole', userRole);
 
-
                     router.push(`/?userid=${userId}`);
                 } catch (error) {
                     console.error('Error parsing JSON in the API response:', error);
@@ -40,7 +45,8 @@ export default function Page() {
             } else {
                 // Handle login failure
                 console.error('Login failed');
-            }            
+                setShowError(true); // Show the error pop-up
+            }
         } catch (error) {
             // Handle fetch error
             console.error('Error during login:', error);
@@ -94,6 +100,19 @@ export default function Page() {
 
                 <Button text="Sign In" color="primary" onClick={handleLogin} />
                 <div className="mt-2 text-gray-400 text-sm cursor-pointer">Create Account</div>
+
+                {/* Error pop-up */}
+                {showError && (
+                    <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
+                        <div className="bg-gray-800 p-4 rounded shadow-md text-white">
+                            <p className="text-red-500">Invalid email or password. Please try again.</p>
+                            <button className="mt-2 p-2 bg-purple-500 text-white rounded"
+                                onClick={() => setShowError(false)}>
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
