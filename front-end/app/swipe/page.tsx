@@ -148,12 +148,11 @@ function Swipe() {
                     <img className="object-contain h-[20rem] border-white border-2 mt-4" src={movie.bgImg} alt={`${movie.name} background`} />
 
                     <div className='flex flex-row gap-2 pt-4 '>
-                        {/* {movie.genres.map( (genres,index)=>
+                        {movie.genres ? (movie.genres.map( (genres,index)=>
                         (
                             <p className=' border-2 border-white rounded-lg pl-2 pr-2'key={index}>{genres}</p>
-                        )
-                    )} */}
-                    </div>
+                        ))) : ("") }
+                    </div> 
                     <p className=" w-full pt-4"> {movie.description}</p>
                     <div className='flex flex-row  gap-4   place-content-center w-full h-full pt-[3%]'>
                         <svg onClick={dislike} className='cursor-pointer' width="103" height="102" viewBox="0 0 63 62" fill="none" xmlns="http://www.w3.org/2000/svg">
