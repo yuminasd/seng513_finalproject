@@ -36,7 +36,6 @@ export default function SignUp() {
   return (
     <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
       <div className="w-120 text-center">
-        {/* Similar structure as your login page */}
         <h1 className="text-3xl font-bold mb-4">
           <span className="text-white">Create Your</span>
           <span className="text-purple-500"> Account</span>
@@ -63,7 +62,13 @@ export default function SignUp() {
           />
         </div>
 
-        <Button text="Sign Up" color="primary" onClick={handleSignUp} />
+        {/* Button component included here */}
+        <button
+          className="my-2 p-2 w-full bg-purple-500 text-white rounded cursor-pointer"
+          onClick={handleSignUp}
+        >
+          Sign Up
+        </button>
       </div>
     </div>
   );
