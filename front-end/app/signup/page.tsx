@@ -8,6 +8,7 @@ import Button from '../components/button';
 export default function Signup() {
     // Initialize necessary state variables
     const router = useRouter();
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +22,12 @@ export default function Signup() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ "email": email, "password": password }),
+                body: JSON.stringify({
+                    name: name,
+                    emailAddress: email,
+                    password: password,
+                    image: '/logo.png', // Hard-coded link to the logo image
+                }),
             });
 
             if (response.ok) {
@@ -51,6 +57,18 @@ export default function Signup() {
                     <span className="text-purple-500"> Movie Match Account</span>
                 </h1>
                 
+                {/* Name input */}
+                <div className="mb-4 w-120">
+                    <label className="text-white block mb-1 text-left">Name</label>
+                    <input
+                        className="my-2 p-2 w-full border rounded text-gray-500 bg-gray-800 border-transparent"
+                        type="text"
+                        placeholder="Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                </div>
+
                 {/* Email input */}
                 <div className="mb-4 w-120">
                     <label className="text-white block mb-1 text-left">Email</label>
