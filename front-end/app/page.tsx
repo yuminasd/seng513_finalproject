@@ -1,27 +1,28 @@
 'use client';
 import { useState, useEffect } from 'react'
-import Button from "./components/button";
 import Navbar from "./components/navbar";
 import JoinGroupModal from "./components/join_group/JoinGroupModal";
 import Table from "./components/table";
 import CreateGroupModal from "./components/create_group/CreateGroupModal";
-import { groupsMock } from "./mock";
-import { MockRead } from "./functions/users/read";
 import { Group, User } from './types';
 
 
 function Home() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [user, setUser] = useState<User | null>(null);
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+
+
   // Table Columns
   const columns = ['name', 'id'];
 
   useEffect(() => {
+
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/users/656500413c49f1af1a59b5d1');
+        console.log(userId);
+        const response = await fetch('http://localhost:5000/users/' + userId);
         const data = await response.json();
-        // console.log(data.data.data);
         setGroups(data.data.data.groupID);
         setUser(data.data.data);
       } catch (error) {
