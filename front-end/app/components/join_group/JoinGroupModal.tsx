@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import Modal from './modal';
 import Button from '../button';
+import { User } from '@/app/types';
+
+interface CreateGroupModalProps {
+    user: User | null;
+}
 
 
-const JoinGroupModal: React.FC = () => {
+const JoinGroupModal: React.FC<CreateGroupModalProps> = ({ user }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const openModal = () => {
@@ -17,7 +22,7 @@ const JoinGroupModal: React.FC = () => {
     return (
         <div>
             <Button onClick={openModal} text="Join Group" color="secondary" />
-            <Modal hidden={!isModalOpen} onClose={closeModal} />
+            <Modal hidden={!isModalOpen} onClose={closeModal} user={user} />
         </div>
     );
 };

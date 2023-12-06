@@ -5,8 +5,10 @@ import (
 	"go-mongodb/configs"
 	"go-mongodb/models"
 	"go-mongodb/responses"
+	"log"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,9 +19,47 @@ import (
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
+var adminCollection *mongo.Collection = configs.GetCollection(configs.DB, "admin")
+
 var validate = validator.New()
 
-func indexOf(element string, data []string) int {
+func updateUserGroups(userID primitive.ObjectID) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var user models.User
+
+	err := userCollection.FindOne(ctx, bson.M{"id": userID}).Decode(&user)
+	if err != nil {
+		return
+	}
+
+	var newGroupList []models.Group
+	var newGroup models.Group
+	for i := 0; i < len(user.GroupID); i++ {
+		groupID := user.GroupID[i].Id
+		err := groupCollection.FindOne(ctx, bson.M{"id": groupID}).Decode(&newGroup)
+		if err != nil {
+			continue
+		}
+		newGroup.Members = nil
+		newGroupList = append(newGroupList, newGroup)
+	}
+
+	user.GroupID = newGroupList
+	userCollection.ReplaceOne(ctx, bson.M{"id": userID}, user)
+}
+
+func indexOf(element string, data []models.Group) int {
+	for i := 0; i < len(data); i++ {
+		log.Printf(data[i].Id.String(), " \n", element)
+		if strings.Contains(data[i].Id.String(), element) {
+			return i
+		}
+	}
+	return -1
+}
+
+func indexOfString(element string, data []string) int {
 	for i := 0; i < len(data); i++ {
 		if data[i] == element {
 			return i
@@ -77,6 +117,7 @@ func GetUser() gin.HandlerFunc {
 
 		objId, _ := primitive.ObjectIDFromHex(userId)
 
+		updateUserGroups(objId)
 		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
@@ -104,6 +145,24 @@ func GetAllUsers() gin.HandlerFunc {
 		for results.Next(ctx) {
 			var singleUser models.User
 			if err = results.Decode(&singleUser); err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			}
+
+			updateUserGroups(singleUser.Id)
+		}
+
+		result, err := userCollection.Find(ctx, bson.M{})
+
+		//Somewhat redundant code but has to loop through list of users to update group to make sure groups are up to date
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		defer result.Close(ctx)
+		for result.Next(ctx) {
+			var singleUser models.User
+			if err = result.Decode(&singleUser); err != nil {
 				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			}
 
@@ -199,12 +258,20 @@ func AddGroup() gin.HandlerFunc {
 			DislikedMovies: user.DislikedMovies,
 		}
 
+		groupID, _ := primitive.ObjectIDFromHex(groupId)
+		var newGroup models.Group
+		err2 := groupCollection.FindOne(ctx, bson.M{"id": groupID}).Decode(&newGroup)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err2.Error()}})
+			return
+		}
+
 		if user.GroupID == nil {
-			var newGroup []string
-			newGroup = append(newGroup, groupId)
-			UpdatedUser.GroupID = newGroup
+			var newGroupList []models.Group
+			newGroupList = append(newGroupList, newGroup)
+			UpdatedUser.GroupID = newGroupList
 		} else {
-			UpdatedUser.GroupID = append(UpdatedUser.GroupID, groupId)
+			UpdatedUser.GroupID = append(UpdatedUser.GroupID, newGroup)
 		}
 
 		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
@@ -216,6 +283,7 @@ func AddGroup() gin.HandlerFunc {
 		c.JSON(http.StatusOK,
 			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
 		)
+
 	}
 }
 
@@ -246,9 +314,14 @@ func RemoveGroup() gin.HandlerFunc {
 			DislikedMovies: user.DislikedMovies,
 		}
 
-		var index = indexOf(groupId, UpdatedUser.GroupID)
+		var index = indexOf(groupId, user.GroupID)
 		if user.GroupID != nil && index != -1 {
-			UpdatedUser.GroupID = slices.Delete(UpdatedUser.GroupID, index, index+1)
+			if len(user.GroupID) == 1 {
+				UpdatedUser.GroupID = nil
+
+			} else {
+				UpdatedUser.GroupID = slices.Delete(UpdatedUser.GroupID, index, index+1)
+			}
 		}
 
 		_, err1 := userCollection.ReplaceOne(ctx, bson.M{"id": objId}, UpdatedUser)
@@ -270,12 +343,19 @@ func AddLiked() gin.HandlerFunc {
 		movieId := c.Param("movieId")
 		defer cancel()
 		var user models.User
-
+		var movie models.Movie
 		objId, _ := primitive.ObjectIDFromHex(userId)
+		movieID, _ := primitive.ObjectIDFromHex(movieId)
 
 		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			return
+		}
+
+		err2 := movieCollection.FindOne(ctx, bson.M{"id": movieID}).Decode(&movie)
+		if err2 != nil {
+			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err2.Error()}})
 			return
 		}
 
@@ -304,9 +384,68 @@ func AddLiked() gin.HandlerFunc {
 			return
 		}
 
+		for i := 0; i < len(UpdatedUser.GroupID); i++ {
+			for k := 0; k < len(movie.Genres); k++ {
+				if slices.Contains(UpdatedUser.GroupID[i].Genre, movie.Genres[k]) {
+					AddMovieToGroupLiked(movieID, UpdatedUser.GroupID[i].Id, c, ctx)
+					break
+				}
+			}
+		}
+
 		c.JSON(http.StatusOK,
 			responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "User successfully updated!"}},
 		)
+	}
+}
+
+func AddMovieToGroupLiked(objMovieID primitive.ObjectID, objGroupID primitive.ObjectID, c *gin.Context, ctx context.Context) {
+	var group models.Group
+	var err = groupCollection.FindOne(ctx, bson.M{"id": objGroupID}).Decode(&group)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error finding group",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	for idx, likedMovie := range group.LikedMovies {
+		if likedMovie.MovieId.Id == objMovieID {
+			group.LikedMovies[idx].LikedCount++
+			_, err := groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Error updating group",
+					"error":   err.Error(),
+				})
+				return
+			}
+			return
+		}
+	}
+
+	var placeHolderMovie models.Movie
+	err1 := movieCollection.FindOne(ctx, bson.M{"id": objMovieID}).Decode(&placeHolderMovie)
+	if err1 != nil {
+		c.JSON(http.StatusInternalServerError, responses.UserResponse{
+			Status:  http.StatusInternalServerError,
+			Message: "error",
+			Data:    map[string]interface{}{"data": "Movie Doesn't Exist"},
+		})
+		return
+	}
+	group.LikedMovies = append(group.LikedMovies, models.Likedmovies{
+		MovieId:    placeHolderMovie,
+		LikedCount: 1,
+	})
+	_, err = groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error updating group",
+			"error":   err.Error(),
+		})
+		return
 	}
 }
 
@@ -337,7 +476,7 @@ func RemoveLiked() gin.HandlerFunc {
 			DislikedMovies: user.DislikedMovies,
 		}
 
-		var index = indexOf(movieId, UpdatedUser.LikedMovies)
+		var index = indexOfString(movieId, UpdatedUser.LikedMovies)
 		if user.LikedMovies != nil && index != -1 {
 			UpdatedUser.LikedMovies = slices.Delete(UpdatedUser.LikedMovies, index, index+1)
 		}
@@ -428,7 +567,7 @@ func RemoveDisliked() gin.HandlerFunc {
 			DislikedMovies: user.DislikedMovies,
 		}
 
-		var index = indexOf(movieId, UpdatedUser.DislikedMovies)
+		var index = indexOfString(movieId, UpdatedUser.DislikedMovies)
 		if user.DislikedMovies != nil && index != -1 {
 			UpdatedUser.DislikedMovies = slices.Delete(UpdatedUser.DislikedMovies, index, index+1)
 		}
@@ -460,7 +599,18 @@ func GetLiked() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user.LikedMovies}})
+		var movieList []models.Movie
+		var movie models.Movie
+		for i := 0; i < len(user.LikedMovies); i++ {
+			var movieID, _ = primitive.ObjectIDFromHex(user.LikedMovies[i])
+			err := movieCollection.FindOne(ctx, bson.M{"id": movieID}).Decode(&movie)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+				return
+			}
+			movieList = append(movieList, movie)
+		}
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": movieList}})
 	}
 }
 
@@ -488,6 +638,10 @@ type LoginRequestBody struct {
 	Password string
 }
 
+type Admin struct {
+	Id primitive.ObjectID `json:"id,omitempty"`
+}
+
 func CheckAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -506,11 +660,20 @@ func CheckAuth() gin.HandlerFunc {
 			return
 		}
 
+		var admin Admin
+		var role string
+		err1 := adminCollection.FindOne(ctx, bson.M{"id": user.Id}).Decode(&admin)
+		if err1 != nil {
+			role = "user"
+		} else {
+			role = "admin"
+		}
+
 		if user.Password != requestBody.Password {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": "Not Authenticated"}})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Authentication Successful"}})
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Authentication Successful", "id": user.Id, "userRole": role}})
 	}
 }
