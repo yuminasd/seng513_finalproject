@@ -1,9 +1,10 @@
 'use client'
+// login/page.tsx
 
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link'; // Make sure to add this import for the Link component
-import Button from '../components/button'; // Assuming you have a Button component
+import Link from 'next/link';
+import Button from '../components/button';
 
 export default function Page() {
   const router = useRouter();
@@ -90,7 +91,7 @@ export default function Page() {
         </div>
 
         <Button text="Sign In" color="primary" onClick={handleLogin} />
-        <Link href="/login/signup">
+        <Link href="/app/signup/page">
           <a className="mt-2 text-gray-400 text-sm cursor-pointer">Create Account</a>
         </Link>
 

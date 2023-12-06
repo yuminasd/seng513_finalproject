@@ -1,8 +1,11 @@
 'use client'
+
+// app/signup/page.tsx
+
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 
-export default function SignUp() {
+export default function SignUpPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,7 +64,6 @@ export default function SignUp() {
           />
         </div>
 
-        {/* Button component included here */}
         <button
           className="my-2 p-2 w-full bg-purple-500 text-white rounded cursor-pointer"
           onClick={handleSignUp}
