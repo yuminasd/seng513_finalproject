@@ -27,7 +27,11 @@ export default function Page() {
                     console.log(responseData);
 
                     const userId = responseData.data.id;
+                    const userRole = responseData.data.userRole;
+
                     localStorage.setItem('userId', userId);
+                    localStorage.setItem('userRole', userRole);
+
 
                     router.push(`/?userid=${userId}`);
                 } catch (error) {
