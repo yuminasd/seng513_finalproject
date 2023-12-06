@@ -129,13 +129,6 @@ function Swipe() {
         )
     }
 
-    function MovieGenres(){
-        let i = 0;
-        while(i < movie.genres.length){
-
-        }
-        
-    }
 
 
     return (
