@@ -19,6 +19,7 @@ import (
 )
 
 var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
+var adminCollection *mongo.Collection = configs.GetCollection(configs.DB, "admin")
 
 var validate = validator.New()
 
@@ -637,6 +638,10 @@ type LoginRequestBody struct {
 	Password string
 }
 
+type Admin struct {
+	Id primitive.ObjectID `json:"id,omitempty"`
+}
+
 func CheckAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -655,11 +660,20 @@ func CheckAuth() gin.HandlerFunc {
 			return
 		}
 
+		var admin Admin
+		var role string
+		err1 := adminCollection.FindOne(ctx, bson.M{"id": user.Id}).Decode(&admin)
+		if err1 != nil {
+			role = "user"
+		} else {
+			role = "admin"
+		}
+
 		if user.Password != requestBody.Password {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": "Not Authenticated"}})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Authentication Successful", "id": user.Id}})
+		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": "Authentication Successful", "id": user.Id, "userRole": role}})
 	}
 }
