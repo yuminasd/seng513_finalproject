@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '../components/button';
 
+// ...
+
 export default function Page() {
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
@@ -20,12 +22,19 @@ export default function Page() {
             });
             console.log(response)
             if (response.ok) {
-                const responseData = await response.json();
-                console.log(responseData)
-                const userId = responseData.data.id; // Adjust the field name based on your API response
-                router.push(`/?userid=${userId}`);
+                try {
+                    const responseData = await response.json();
+                    console.log(responseData);
+
+                    const userId = responseData.data.id;
+                    localStorage.setItem('userId', userId);
+
+                    router.push(`/?userid=${userId}`);
+                } catch (error) {
+                    console.error('Error parsing JSON in the API response:', error);
+                }
             } else {
-                // Handle login failure****
+                // Handle login failure
                 console.error('Login failed');
             }            
         } catch (error) {
@@ -33,6 +42,9 @@ export default function Page() {
             console.error('Error during login:', error);
         }
     };
+
+    // Retrieve user id from localStorage
+    const storedUserId = localStorage.getItem('userId');
 
     return (
         <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
