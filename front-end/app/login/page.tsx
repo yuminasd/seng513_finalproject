@@ -3,18 +3,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '../components/button';
 
-// ...
-
-// ...
-
-// ...
-
 export default function Page() {
     const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [showError, setShowError] = useState(false); // New state for error pop-up
+    const [showError, setShowError] = useState(false);
 
     const handleLogin = async () => {
         try {
@@ -46,16 +40,13 @@ export default function Page() {
             } else {
                 // Handle login failure
                 console.error('Login failed');
-                setShowError(true); // Show the error pop-up
+                setShowError(true);
             }
         } catch (error) {
             // Handle fetch error
             console.error('Error during login:', error);
         }
     };
-
-    // Retrieve user id from localStorage
-    const storedUserId = localStorage.getItem('userId');
 
     return (
         <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
@@ -100,7 +91,11 @@ export default function Page() {
                 </div>
 
                 <Button text="Sign In" color="primary" onClick={handleLogin} />
-                <div className="mt-2 text-gray-400 text-sm cursor-pointer">Create Account</div>
+
+                {/* Link to signup page */}
+                <div className="mt-2 text-gray-400 text-sm cursor-pointer" onClick={() => router.push('/signup')}>
+                    Create Account
+                </div>
 
                 {/* Error pop-up */}
                 {showError && (
