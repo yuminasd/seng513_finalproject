@@ -129,6 +129,14 @@ function Swipe() {
         )
     }
 
+    function MovieGenres(){
+        let i = 0;
+        while(i < movie.genres.length){
+
+        }
+        
+    }
+
 
     return (
         <section className="flex flex-col h-screen overflow-hidden">
@@ -139,15 +147,22 @@ function Swipe() {
                     <DislikeMovie />
                 </div>
                 
+                
                 <motion.div ref={scope} className="overflow-hidden relative flex flex-col gap-1 bg-black rounded-md  w-full h-full aspect-video border border-neutral-900 p-4">
                   
                     
                     <p className="text-center font-bold text-4xl pt-4">{movie.name}</p>
                     <img className="object-contain h-[20rem] border-white border-2 mt-4" src={movie.bgImg} alt={`${movie.name} background`} />
                     
-                    
+                    <div className='flex flex-row gap-2 pt-4 '>
+                    {movie.genres.map( (genres,index)=>
+                        (
+                            <p className=' border-2 border-white rounded-lg pl-2 pr-2'key={index}>{genres}</p>
+                        )
+                    )}
+                    </div>
                     <p className=" w-full pt-4"> {movie.description}</p>
-                    <div className='flex flex-row  gap-4   place-content-center w-full h-full pt-[10%]'>
+                    <div className='flex flex-row  gap-4   place-content-center w-full h-full pt-[3%]'>
                         <svg onClick={dislike} className='cursor-pointer' width="103" height="102" viewBox="0 0 63 62" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <rect x="0.816895" width="62" height="62" rx="31" fill="white" fill-opacity="0.1"/>
                             <path d="M30.5119 39.1676C30.5931 40.3376 31.7019 41.2413 32.8969 40.9426L33.2231 40.8613C33.5224 40.7914 33.7976 40.6427 34.02 40.4306C34.2425 40.2185 34.4041 39.9507 34.4881 39.6551C34.7631 38.6351 35.1544 36.5151 34.5656 34.0176C34.7356 34.0426 34.9219 34.0638 35.1194 34.0813C36.0106 34.1626 37.2056 34.1701 38.2644 33.8176C38.9119 33.6013 39.5069 32.9676 39.7644 32.2276C39.8933 31.8694 39.934 31.4854 39.8831 31.1081C39.8322 30.7308 39.6912 30.3713 39.4719 30.0601C39.5444 29.9126 39.6006 29.7576 39.6444 29.6076C39.7406 29.2701 39.7856 28.8976 39.7856 28.5376C39.7856 28.1751 39.7406 27.8051 39.6444 27.4663C39.5953 27.292 39.5283 27.1231 39.4444 26.9626C39.6556 26.4788 39.5781 25.9376 39.4406 25.5263C39.2998 25.1207 39.0937 24.7407 38.8306 24.4013C38.8981 24.2101 38.9256 24.0101 38.9256 23.8201C38.9203 23.4192 38.8113 23.0265 38.6094 22.6801C38.1919 21.9463 37.3631 21.3501 36.1919 21.3501H31.8169C31.0606 21.3501 30.4794 21.4501 29.9844 21.6213C29.5587 21.7772 29.152 21.9806 28.7719 22.2276L28.7119 22.2638C28.0819 22.6488 27.4631 23.0263 26.1269 23.1676C25.1694 23.2688 24.3169 24.0426 24.3169 25.0988V30.0988C24.3169 31.1626 25.1731 31.8901 26.0131 32.1188C27.0744 32.4088 27.9806 33.1026 28.6781 33.8813C29.3781 34.6638 29.8206 35.4813 29.9769 35.9288C30.2256 36.6476 30.4219 37.8538 30.5119 39.1676V39.1676Z" fill="#EF4444"/>
