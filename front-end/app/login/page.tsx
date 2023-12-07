@@ -33,7 +33,7 @@ export default function Page() {
                     localStorage.setItem('userRole', userRole);
 
                     router.push(`/?userid=${userId}&userrole=${userRole}`);
-                    
+
                 } catch (error) {
                     console.error('Error parsing JSON in the API response:', error);
                 }

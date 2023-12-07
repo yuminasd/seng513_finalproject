@@ -402,6 +402,25 @@ func AddMembersToGroup() gin.HandlerFunc {
 			return
 		}
 
+		// Add group to each user's GroupID array
+		for _, memberID := range memberIDs {
+			userID, _ := primitive.ObjectIDFromHex(memberID)
+			_, err = userCollection.UpdateOne(
+				ctx,
+				bson.M{"id": userID},
+				bson.M{"$addToSet": bson.M{"groupid": group}},
+			)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, responses.UserResponse{
+					Status:  http.StatusInternalServerError,
+					Message: "error",
+					Data:    map[string]interface{}{"data": err.Error()},
+				})
+				return
+			}
+		}
+
+		// Add users to the group's Members array
 		for _, memberID := range memberIDs {
 			var user models.User
 			userID, _ := primitive.ObjectIDFromHex(memberID)
@@ -417,6 +436,7 @@ func AddMembersToGroup() gin.HandlerFunc {
 			group.Members = append(group.Members, user)
 		}
 
+		// Update group model in groupCollection with added members
 		_, err = groupCollection.ReplaceOne(ctx, bson.M{"id": objGroupID}, group)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.UserResponse{
@@ -427,19 +447,13 @@ func AddMembersToGroup() gin.HandlerFunc {
 			return
 		}
 
-		for i := 0; i < len(memberIDs); i++ {
-			userid, _ := primitive.ObjectIDFromHex(memberIDs[i])
-			AddUsersLikedMovies(userid, group.Id, ctx, c)
-		}
-
 		c.JSON(http.StatusOK, responses.UserResponse{
 			Status:  http.StatusOK,
 			Message: "success",
-			Data:    map[string]interface{}{"data": "Members successfully added to the group!"},
+			Data:    map[string]interface{}{"data": "Members successfully added to the group and group added to users!"},
 		})
 	}
 }
-
 func RemoveUserFromGroup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
