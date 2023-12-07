@@ -1,0 +1,18 @@
+
+FROM golang:alpine
+
+
+# WORKDIR /go/src/app
+WORKDIR /app
+
+# COPY /go-mongodb ./
+COPY . .
+
+
+RUN go build -o main .
+
+
+EXPOSE 8080
+
+
+CMD ["./main"]

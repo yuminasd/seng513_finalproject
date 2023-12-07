@@ -6,7 +6,7 @@ export default function Navbar() {
         <div className="absolute top-0 left-0  w-full bg-black border-b border-neutral-800 flex justify-between items-center p-4 z-20">
             <a className="font-xl text-purple-500 flex  items-center gap-4 font-bold text-lg hover:text-purple-600 " href="/">
                 <Image src="/images/logo.svg" alt="Groups" width={36} height={36} />
-                Movies Match
+                Movie Match
             </a>
 
             <div className="flex gap-4">
