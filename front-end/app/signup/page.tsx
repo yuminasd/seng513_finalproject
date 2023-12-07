@@ -1,65 +1,75 @@
 'use client'
+// Import necessary dependencies
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '../components/button';
 
-export default function Page() {
+// Create and export the Signup component
+export default function Signup() {
+    // Initialize necessary state variables
     const router = useRouter();
-    const [showPassword, setShowPassword] = useState(false);
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [showError, setShowError] = useState(false);
 
-    const handleLogin = async () => {
+    // Function to handle signup
+    const handleSignup = async () => {
         try {
-            const response = await fetch('http://localhost:5000/checklogin', {
+            const response = await fetch('http://localhost:5000/users', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ "email": email, "password": password }),
+                body: JSON.stringify({
+                    name: name,
+                    emailAddress: email,
+                    password: password,
+                    image: '/logo.png', // Hard-coded link to the logo image
+                }),
             });
 
             if (response.ok) {
-                // Handle successful login
-                try {
-                    const responseData = await response.json();
-                    console.log(responseData);
-
-                    const userId = responseData.data.id;
-                    const userRole = responseData.data.userRole;
-
-                    localStorage.setItem('userId', userId);
-                    localStorage.setItem('userRole', userRole);
-
-                    router.push(`/?userid=${userId}&userrole=${userRole}`);
-
-                } catch (error) {
-                    console.error('Error parsing JSON in the API response:', error);
-                }
+                // Handle successful signup
+                router.push('/login'); // Redirect to the login page
             } else {
-                // Handle login failure
-                console.error('Login failed');
+                // Handle signup failure
+                console.error('Signup failed');
                 setShowError(true);
             }
         } catch (error) {
             // Handle fetch error
-            console.error('Error during login:', error);
+            console.error('Error during signup:', error);
         }
     };
 
     return (
         <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
             <div className="w-120 text-center">
-                {/* MovieMatch Logo */}
+                {/* Same logo as the login page */}
                 <div className="mb-4">
                     <img src="/logo.png" alt="logo" className="mx-auto" />
                 </div>
 
                 <h1 className="text-3xl font-bold mb-4">
-                    <span className="text-white">Welcome To</span>
-                    <span className="text-purple-500"> Movie Match</span>
+                    <span className="text-white">Create Your</span>
+                    <span className="text-purple-500"> Movie Match Account</span>
                 </h1>
+                
+                {/* Name input */}
+                <div className="mb-4 w-120">
+                    <label className="text-white block mb-1 text-left">Name</label>
+                    <input
+                        className="my-2 p-2 w-full border rounded text-gray-500 bg-gray-800 border-transparent"
+                        type="text"
+                        placeholder="Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                </div>
+
+                {/* Email input */}
                 <div className="mb-4 w-120">
                     <label className="text-white block mb-1 text-left">Email</label>
                     <input
@@ -71,6 +81,7 @@ export default function Page() {
                     />
                 </div>
 
+                {/* Password input with show/hide toggle */}
                 <div className="mb-4 w-120 relative">
                     <label className="text-white block mb-1 text-left">Password</label>
                     <div className="flex items-center">
@@ -90,18 +101,19 @@ export default function Page() {
                     </div>
                 </div>
 
-                <Button text="Sign In" color="primary" onClick={handleLogin} />
+                {/* Signup button */}
+                <Button text="Sign Up" color="primary" onClick={handleSignup} />
 
-                {/* Link to signup page */}
-                <div className="mt-2 text-gray-400 text-sm cursor-pointer" onClick={() => router.push('/signup')}>
-                    Create Account
+                {/* Link to login page */}
+                <div className="mt-2 text-gray-400 text-sm cursor-pointer" onClick={() => router.push('/login')}>
+                    Already have an account? Login here.
                 </div>
 
                 {/* Error pop-up */}
                 {showError && (
                     <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
                         <div className="bg-gray-800 p-4 rounded shadow-md text-white">
-                            <p className="text-red-500">Invalid email or password. Please try again.</p>
+                            <p className="text-red-500">Signup failed.</p>
                             <button className="mt-2 p-2 bg-purple-500 text-white rounded"
                                 onClick={() => setShowError(false)}>
                                 Close
