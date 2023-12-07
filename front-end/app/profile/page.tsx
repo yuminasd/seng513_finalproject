@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/navbar";
 import { User } from "../types";
 import Button from "../components/button";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Profile() {
     const [user, setUser] = useState<User | null>(null);
@@ -33,8 +35,36 @@ export default function Profile() {
         fetchData();
     }, []);
 
+    const updateUser = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/users/' + userId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify([user]),
+            });
+        }
+        catch (error) {
+            toast.error("Fail Update User");
+        }
+        toast.success("Updated User");
+    };
+
+
     return (
         <section className=" flex p-4 h-screen">
+            <ToastContainer position="bottom-right"
+                autoClose={5000}
+                z-index={9999}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark" />
             <Navbar />
             <form className="flex flex-col gap-4 p-4 w-80 h-full">
                 <img className="p-4  w-80 aspect-square border border-neutral-800 rounded" src={user?.image} alt="User Image" />
@@ -50,7 +80,7 @@ export default function Profile() {
                 />
             </form>
             {isReadOnly ? (<div></div>) : (<div className="absolute left-0 bottom-0 w-full bg-neutral-900 p-4">
-                <Button text={"Update"} color={"primary"} />
+                <Button text={"Update"} color={"primary"} onClick={updateUser} />
             </div>)}
 
 

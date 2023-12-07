@@ -47,4 +47,5 @@ func UserRoute(router *gin.Engine) {
 	router.DELETE("/groups/:groupId/likedmovies/:movieId", controllers.DeleteLikedMovieFromGroup())
 	router.DELETE("/groups/:groupId/members/:userId", controllers.RemoveUserFromGroup())
 	router.DELETE("/groups/:groupId/genres", controllers.DeleteGenresFromGroup())
+
 }

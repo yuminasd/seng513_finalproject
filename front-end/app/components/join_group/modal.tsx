@@ -7,7 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 interface ModalProps {
     hidden: boolean;
     onClose: () => void;
-    user: User | null;
+    user: User;
 }
 
 const Modal: React.FC<ModalProps> = ({ hidden, onClose, user }) => {
@@ -23,7 +23,7 @@ const Modal: React.FC<ModalProps> = ({ hidden, onClose, user }) => {
 
     const handleJoinClick = async () => {
         try {
-            event.preventDefault();
+            // event.preventDefault();
             console.log(user);
             const response = await fetch('http://localhost:5000/groups/' + code + '/members', {
                 method: 'POST',

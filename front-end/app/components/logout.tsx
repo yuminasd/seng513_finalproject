@@ -2,12 +2,23 @@
 import { useRouter } from 'next/navigation'
 const Logout = () => {
     const router = useRouter()
-
+    const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
     // Your logout logic here...
-    const handleLogout = () => {
-        // Perform logout actions...
+    const handleLogout = async () => {
 
-        // Redirect to the login page after logout
+        const response = await fetch('http://localhost:5000/logout/' + userId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.ok) {
+            router.push('/login');
+        } else {
+            // Handle error response
+            console.error('Failed to logout:', response.status, response.statusText);
+        }
         router.push('/login');
     };
 

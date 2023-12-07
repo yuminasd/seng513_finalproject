@@ -4,7 +4,7 @@ import Button from '../button';
 import { User } from '@/app/types';
 
 interface CreateGroupModalProps {
-    user: User | null;
+    user: User;
 }
 
 

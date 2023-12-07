@@ -38,16 +38,16 @@ export default function Profile({ params }: { params: { slug: number } }) {
             </form>
             <div className=" flex flex-col gap-4  text-center ">
                 <p> List of all liked movies</p>
-                {/* {user?.likedMovies ? (
+                {user?.groupID ? (
                     <div className=" grid lg:grid-cols-4 md:grid-cols-3 sm:grid-cols-1  gap-4 justify-start h-screen overflow-y-auto content-start px-4 ">
-                        {user.likedMovies.map((movie, index) => (
+                        {user.groupID[0].likedMovies.map((movie, index) => (
                             <MovieCard key={index} movie={movie.movieId} />
                         ))}
                     </div>
                 ) : (
                     <p>Loading Movies data...</p>
                 )
-                } */}
+                }
             </div>
 
         </section>
